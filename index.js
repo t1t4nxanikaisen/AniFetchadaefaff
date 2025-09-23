@@ -12,13 +12,9 @@ app.use((req, res, next) => {
     next();
 });
 
-// Cache systems
-const animeMappingCache = new Map();
-const episodeCache = new Map();
-
-// Predefined TMDB to Animeworld mappings (common anime)
-const predefinedMappings = {
-    // Popular Anime Mappings
+// Predefined TMDB to Animeworld mappings
+const animeMappings = {
+    // Popular Anime
     '31910': 'one-piece',
     '73223': 'naruto-shippuden',
     '46298': 'attack-on-titan',
@@ -29,6 +25,8 @@ const predefinedMappings = {
     '46774': 'one-punch-man',
     '42249': 'dragon-ball-super',
     '92685': 'spy-x-family',
+    
+    // More Anime
     '60586': 'tokyo-revengers',
     '90447': 'blue-lock',
     '95403': 'hells-paradise',
@@ -38,22 +36,39 @@ const predefinedMappings = {
     '79008': 'the-promised-neverland',
     '86960': 'fire-force',
     '81774': 'black-clover',
-    '68890': 'that-time-i-got-reincarnated-as-a-slime'
+    '68890': 'that-time-i-got-reincarnated-as-a-slime',
+    
+    // Additional Anime
+    '92585': 'solo-leveling',
+    '93812': 'frieren-beyond-journeys-end',
+    '94801': 'the-apothecary-diaries',
+    '95897': 'metallic-rouge',
+    '96873': 'delicious-in-dungeon',
+    
+    // Classic Anime
+    '1404': 'death-note',
+    '1415': 'dragon-ball',
+    '1416': 'dragon-ball-z',
+    '1429': 'naruto',
+    '46786': 'fullmetal-alchemist-brotherhood',
+    '46260': 'hunter-x-hunter',
+    '456': 'cowboy-bebop'
 };
 
-// -------- HELPER FUNCTIONS --------
+// Cache for dynamic mappings
+const dynamicMappings = new Map();
 
-// Function to search Animeworld for anime slug
-async function searchAnimeSlug(animeName) {
+// Function to search anime on Animeworld
+async function searchAnimeOnAnimeworld(searchTerm) {
     try {
-        const searchUrl = `https://watchanimeworld.in/?s=${encodeURIComponent(animeName)}`;
+        const searchUrl = `https://watchanimeworld.in/?s=${encodeURIComponent(searchTerm)}`;
         
         const response = await axios.get(searchUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept-Language': 'en-US,en;q=0.9'
             },
-            timeout: 10000
+            timeout: 15000
         });
 
         const $ = cheerio.load(response.data);
@@ -63,320 +78,312 @@ async function searchAnimeSlug(animeName) {
             const title = $(el).find('h2 a').text().trim();
             const url = $(el).find('h2 a').attr('href');
             const image = $(el).find('img').attr('src');
+            const description = $(el).find('p').text().trim();
             
             if (title && url && url.includes('/anime/')) {
                 const slugMatch = url.match(/\/anime\/([^\/]+)\//);
                 if (slugMatch && slugMatch[1]) {
                     results.push({
-                        title,
+                        title: title,
                         slug: slugMatch[1],
-                        url,
-                        image
+                        url: url,
+                        image: image,
+                        description: description
                     });
                 }
             }
         });
 
-        return results.length > 0 ? results[0].slug : null;
+        return results;
     } catch (error) {
         console.error('Search error:', error.message);
-        return null;
+        return [];
     }
 }
 
-// Function to get anime info from TMDB
-async function getTMDBInfo(tmdbId) {
+// Function to get anime slug from TMDB ID
+async function getAnimeSlug(tmdbId) {
+    // Check predefined mappings first
+    if (animeMappings[tmdbId]) {
+        return animeMappings[tmdbId];
+    }
+    
+    // Check dynamic cache
+    if (dynamicMappings.has(tmdbId)) {
+        return dynamicMappings.get(tmdbId);
+    }
+    
+    // Try to get anime name from TMDB API (optional)
+    let animeName = '';
     try {
-        const response = await axios.get(
+        const tmdbResponse = await axios.get(
             `https://api.themoviedb.org/3/tv/${tmdbId}`,
             {
                 headers: {
-                    'Authorization': `Bearer ${process.env.TMDB_ACCESS_TOKEN}`,
+                    'Authorization': `Bearer ${process.env.TMDB_TOKEN || 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJkM2U1ZWRjYzU5MWVjMzEyY2JlYmJhYzE0ZTE2MmQxYSIsInN1YiI6IjY1N2FjYjQyYjU0MGQxMDExZTA0YjQ3OSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.6a6nRg8pBd2p2p2p2p2p2p2p2p2p2p2p2p2p2p2p2p'}`,
                     'Accept': 'application/json'
                 },
                 timeout: 5000
             }
         );
-        return response.data;
+        animeName = tmdbResponse.data.name || '';
     } catch (error) {
-        console.log('TMDB API fallback:', error.message);
-        return null;
+        console.log('TMDB API not available, using direct search');
     }
+    
+    // Search on Animeworld
+    const searchTerms = [
+        animeName,
+        `anime ${tmdbId}`,
+        tmdbId.toString()
+    ];
+    
+    for (const term of searchTerms) {
+        if (!term) continue;
+        
+        const results = await searchAnimeOnAnimeworld(term);
+        if (results.length > 0) {
+            const slug = results[0].slug;
+            dynamicMappings.set(tmdbId, slug);
+            return slug;
+        }
+    }
+    
+    return null;
 }
 
-// Function to find anime slug by TMDB ID
-async function findAnimeSlug(tmdbId) {
-    // Check predefined mappings first
-    if (predefinedMappings[tmdbId]) {
-        return predefinedMappings[tmdbId];
-    }
-
-    // Check cache
-    if (animeMappingCache.has(tmdbId)) {
-        return animeMappingCache.get(tmdbId);
-    }
-
-    try {
-        // Get anime info from TMDB
-        const tmdbInfo = await getTMDBInfo(tmdbId);
-        if (!tmdbInfo) {
-            return null;
-        }
-
-        const animeTitle = tmdbInfo.name;
-        const originalTitle = tmdbInfo.original_name || animeTitle;
-
-        // Try different search terms
-        const searchTerms = [
-            animeTitle,
-            originalTitle,
-            animeTitle.replace(/[^a-zA-Z0-9 ]/g, ' '),
-            originalTitle.replace(/[^a-zA-Z0-9 ]/g, ' ')
-        ];
-
-        for (const term of searchTerms) {
-            if (!term) continue;
-            
-            const slug = await searchAnimeSlug(term);
-            if (slug) {
-                animeMappingCache.set(tmdbId, slug);
-                return slug;
-            }
-        }
-
-        return null;
-    } catch (error) {
-        console.error('Error finding anime slug:', error.message);
-        return null;
-    }
-}
-
-// Function to extract video players and links
-function extractVideoPlayers($) {
+// Function to extract ALL video players and links
+function extractAllVideoPlayers(html) {
+    const $ = cheerio.load(html);
     const players = [];
     
-    // Extract iframe embeds
+    // 1. Extract iframe embeds (main servers)
     $('iframe').each((i, el) => {
         const src = $(el).attr('src');
-        if (src && src.includes('//')) {
+        if (src && (src.includes('//') || src.includes('embed') || src.includes('video'))) {
+            const fullUrl = src.startsWith('//') ? `https:${src}` : src;
             players.push({
                 type: 'embed',
-                name: `Server ${players.length + 1}`,
-                url: src.startsWith('//') ? `https:${src}` : src,
-                quality: 'HD'
+                server: `Server ${players.length + 1}`,
+                url: fullUrl,
+                quality: 'HD',
+                format: 'iframe'
             });
         }
     });
-
-    // Extract videojs players
+    
+    // 2. Extract videojs players
     $('video source').each((i, el) => {
         const src = $(el).attr('src');
         const type = $(el).attr('type') || 'video/mp4';
-        if (src && src.includes('//')) {
+        if (src) {
             players.push({
                 type: 'direct',
-                name: `Direct Stream ${players.length + 1}`,
+                server: `Direct Stream ${players.length + 1}`,
                 url: src.startsWith('//') ? `https:${src}` : src,
                 quality: 'Auto',
-                format: type
+                format: type.includes('m3u8') ? 'hls' : 'mp4'
             });
         }
     });
-
-    // Extract from script variables (common in anime sites)
-    const scriptContent = $('script').text();
-    const videoUrlMatches = scriptContent.match(/(https?:\/\/[^\s"']+\.(mp4|m3u8|webm)[^\s"']*)/gi);
-    if (videoUrlMatches) {
-        videoUrlMatches.forEach(url => {
+    
+    // 3. Extract from video tags
+    $('video').each((i, el) => {
+        const src = $(el).attr('src');
+        if (src) {
             players.push({
                 type: 'direct',
-                name: 'Direct Video',
-                url: url,
+                server: `Video Tag ${players.length + 1}`,
+                url: src.startsWith('//') ? `https:${src}` : src,
                 quality: 'HD',
-                format: url.includes('.m3u8') ? 'hls' : 'mp4'
+                format: 'mp4'
             });
-        });
-    }
-
+        }
+    });
+    
+    // 4. Extract from data-src, data-url attributes
+    $('[data-src], [data-url]').each((i, el) => {
+        const src = $(el).attr('data-src') || $(el).attr('data-url');
+        if (src && src.includes('video')) {
+            players.push({
+                type: 'direct',
+                server: `Data Source ${players.length + 1}`,
+                url: src.startsWith('//') ? `https:${src}` : src,
+                quality: 'HD',
+                format: 'mp4'
+            });
+        }
+    });
+    
+    // 5. Extract from script variables (advanced scraping)
+    const scripts = $('script');
+    scripts.each((i, el) => {
+        const scriptContent = $(el).html();
+        if (scriptContent) {
+            // Look for video URLs in scripts
+            const videoPatterns = [
+                /(https?:\/\/[^\s"']*\.(mp4|m3u8|webm)[^\s"']*)/gi,
+                /(https?:\/\/[^\s"']*\/embed\/[^\s"']*)/gi,
+                /(https?:\/\/[^\s"']*\/video\/[^\s"']*)/gi,
+                /file:\s*["']([^"']+)["']/gi,
+                /src:\s*["']([^"']+)["']/gi
+            ];
+            
+            videoPatterns.forEach(pattern => {
+                const matches = scriptContent.match(pattern);
+                if (matches) {
+                    matches.forEach(match => {
+                        if (match.includes('http')) {
+                            players.push({
+                                type: 'script',
+                                server: `Script Source ${players.length + 1}`,
+                                url: match.replace(/file:\s*|src:\s*|["']/g, ''),
+                                quality: 'HD',
+                                format: 'auto'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });
+    
     return players;
 }
 
-// Function to get episode list for an anime
-async function getAnimeEpisodes(animeSlug) {
-    try {
-        const url = `https://watchanimeworld.in/anime/${animeSlug}/`;
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-        });
-
-        const $ = cheerio.load(response.data);
-        const episodes = [];
-
-        // Extract episodes from episode lists
-        $('a[href*="/episode/"]').each((i, el) => {
-            const href = $(el).attr('href');
-            const title = $(el).text().trim();
-            const episodeMatch = href.match(/episode\/([^\/]+)\//);
+// Function to get episode direct links
+async function getEpisodePlayers(animeSlug, season, episode) {
+    const urlAttempts = [
+        `https://watchanimeworld.in/episode/${animeSlug}-episode-${episode}/`,
+        `https://watchanimeworld.in/episode/${animeSlug}-${season}x${episode}/`,
+        `https://watchanimeworld.in/episode/${animeSlug}-${episode}/`,
+        `https://watchanimeworld.in/episode/${animeSlug}-season-${season}-episode-${episode}/`,
+        `https://watchanimeworld.in/episode/${animeSlug}-ep-${episode}/`
+    ];
+    
+    for (const url of urlAttempts) {
+        try {
+            console.log(`Trying URL: ${url}`);
+            const response = await axios.get(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Referer': 'https://watchanimeworld.in/',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+                },
+                timeout: 10000
+            });
             
-            if (episodeMatch && episodeMatch[1]) {
-                episodes.push({
-                    title,
-                    episode_url: href,
-                    slug: episodeMatch[1]
-                });
+            if (response.status === 200) {
+                const players = extractAllVideoPlayers(response.data);
+                
+                if (players.length > 0) {
+                    return {
+                        success: true,
+                        url: url,
+                        players: players,
+                        total_players: players.length
+                    };
+                }
             }
-        });
-
-        return episodes;
-    } catch (error) {
-        console.error('Error fetching episodes:', error.message);
-        return [];
+        } catch (error) {
+            console.log(`Failed: ${url} - ${error.message}`);
+            continue;
+        }
     }
+    
+    return { success: false, players: [] };
 }
 
 // -------- API ENDPOINTS --------
 
-// Main endpoint: Get anime episode with players
-app.get('/api/anime/:tmdbId/:season/:episodeNum', async (req, res) => {
-    const { tmdbId, season, episodeNum } = req.params;
-
+// Main endpoint: Get anime episode with ALL players
+app.get('/api/anime/:tmdbId/:season/:episode', async (req, res) => {
+    const { tmdbId, season, episode } = req.params;
+    
+    console.log(`Fetching: TMDB ${tmdbId}, Season ${season}, Episode ${episode}`);
+    
     // Validate parameters
     if (!/^\d+$/.test(tmdbId)) {
         return res.status(400).json({ error: 'Invalid TMDB ID format' });
     }
-
+    
     const seasonNum = parseInt(season);
-    const episodeNumber = parseInt(episodeNum);
-
-    if (isNaN(seasonNum) || isNaN(episodeNumber)) {
+    const episodeNum = parseInt(episode);
+    
+    if (isNaN(seasonNum) || isNaN(episodeNum)) {
         return res.status(400).json({ error: 'Invalid season or episode number' });
     }
-
+    
     try {
-        // Find anime slug
-        const animeSlug = await findAnimeSlug(tmdbId);
+        // Get anime slug
+        const animeSlug = await getAnimeSlug(tmdbId);
         
         if (!animeSlug) {
             return res.status(404).json({ 
                 error: 'Anime not found on Animeworld',
                 tmdb_id: tmdbId,
-                suggestion: 'Try searching for the anime name first using /api/search/:name'
+                suggestion: 'Try using a predefined TMDB ID like 31910 (One Piece) or 73223 (Naruto)'
             });
         }
-
-        // Try different episode URL formats
-        const urlAttempts = [
-            `https://watchanimeworld.in/episode/${animeSlug}-episode-${episodeNumber}/`,
-            `https://watchanimeworld.in/episode/${animeSlug}-${seasonNum}x${episodeNumber}/`,
-            `https://watchanimeworld.in/episode/${animeSlug}-${episodeNumber}/`,
-            `https://watchanimeworld.in/episode/${animeSlug}-season-${seasonNum}-episode-${episodeNumber}/`
-        ];
-
-        let finalHtml = null;
-        let finalUrl = '';
-
-        for (const url of urlAttempts) {
-            try {
-                const cacheKey = `${animeSlug}-s${seasonNum}e${episodeNumber}`;
-                if (episodeCache.has(cacheKey)) {
-                    finalHtml = episodeCache.get(cacheKey).html;
-                    finalUrl = episodeCache.get(cacheKey).url;
-                    break;
-                }
-
-                const response = await axios.get(url, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                        'Accept-Language': 'en-US,en;q=0.9'
-                    },
-                    timeout: 10000
-                });
-                
-                if (response.status === 200) {
-                    finalHtml = response.data;
-                    finalUrl = url;
-                    
-                    // Cache the result
-                    episodeCache.set(cacheKey, {
-                        html: finalHtml,
-                        url: finalUrl,
-                        timestamp: Date.now()
-                    });
-                    break;
-                }
-            } catch (error) {
-                continue;
-            }
-        }
-
-        if (!finalHtml) {
-            return res.status(404).json({ 
-                error: 'Episode not found',
-                tmdb_id: tmdbId,
-                anime_slug: animeSlug,
-                season: seasonNum,
-                episode: episodeNumber
-            });
-        }
-
-        const $ = cheerio.load(finalHtml);
-
-        // Extract episode information
-        const title = $('h1.entry-title').text().trim() || 
-                     $('title').text().trim().split('|')[0] || 
-                     `Episode ${episodeNumber}`;
-
-        const description = $('div.entry-content p').first().text().trim() || 
-                           $('.description').text().trim() || '';
-
-        const thumbnail = $('.post-thumbnail img').attr('src') || 
-                         $('.wp-post-image').attr('src') || 
-                         '';
-
-        // Extract video players
-        const videoPlayers = extractVideoPlayers($);
-
-        if (videoPlayers.length === 0) {
+        
+        // Get episode players
+        const episodeData = await getEpisodePlayers(animeSlug, seasonNum, episodeNum);
+        
+        if (!episodeData.success) {
             return res.status(404).json({ 
                 error: 'No video players found for this episode',
                 tmdb_id: tmdbId,
-                anime_slug: animeSlug
+                anime_slug: animeSlug,
+                season: seasonNum,
+                episode: episodeNum
             });
         }
-
-        // Get TMDB info for additional metadata
-        const tmdbInfo = await getTMDBInfo(tmdbId);
-
-        // Success response
+        
+        // Get additional episode info
+        let episodeInfo = {};
+        try {
+            const response = await axios.get(episodeData.url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+            
+            const $ = cheerio.load(response.data);
+            episodeInfo = {
+                title: $('h1.entry-title').text().trim() || `Episode ${episodeNum}`,
+                description: $('div.entry-content p').first().text().trim() || '',
+                thumbnail: $('.post-thumbnail img').attr('src') || $('.wp-post-image').attr('src') || ''
+            };
+        } catch (infoError) {
+            episodeInfo = {
+                title: `Episode ${episodeNum}`,
+                description: '',
+                thumbnail: ''
+            };
+        }
+        
+        // Success response with ALL players
         res.json({
             success: true,
             tmdb_id: tmdbId,
             anime_slug: animeSlug,
             season: seasonNum,
-            episode: episodeNumber,
-            title,
-            description,
-            thumbnail,
-            anime_info: tmdbInfo ? {
-                title: tmdbInfo.name,
-                overview: tmdbInfo.overview,
-                poster: tmdbInfo.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbInfo.poster_path}` : '',
-                backdrop: tmdbInfo.backdrop_path ? `https://image.tmdb.org/t/p/w1280${tmdbInfo.backdrop_path}` : '',
-                rating: tmdbInfo.vote_average,
-                total_episodes: tmdbInfo.number_of_episodes,
-                total_seasons: tmdbInfo.number_of_seasons
-            } : null,
-            video_players: videoPlayers,
-            source_url: finalUrl,
+            episode: episodeNum,
+            title: episodeInfo.title,
+            description: episodeInfo.description,
+            thumbnail: episodeInfo.thumbnail,
+            source_url: episodeData.url,
+            total_players: episodeData.players.length,
+            players: episodeData.players,
+            available_servers: episodeData.players.map(p => p.server),
             timestamp: new Date().toISOString()
         });
-
+        
     } catch (error) {
         console.error('Server error:', error.message);
         res.status(500).json({ 
-            error: 'Failed to fetch episode details',
+            error: 'Failed to fetch episode data',
             message: error.message
         });
     }
@@ -387,72 +394,25 @@ app.get('/api/search/:query', async (req, res) => {
     const { query } = req.params;
     
     try {
-        const searchUrl = `https://watchanimeworld.in/?s=${encodeURIComponent(query)}`;
+        const results = await searchAnimeOnAnimeworld(query);
         
-        const response = await axios.get(searchUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-        });
-
-        const $ = cheerio.load(response.data);
-        const results = [];
-
-        $('article').each((i, el) => {
-            const title = $(el).find('h2 a').text().trim();
-            const url = $(el).find('h2 a').attr('href');
-            const image = $(el).find('img').attr('src');
-            const desc = $(el).find('p').text().trim();
-
-            if (title && url && url.includes('/anime/')) {
-                const slugMatch = url.match(/\/anime\/([^\/]+)\//);
-                if (slugMatch && slugMatch[1]) {
-                    results.push({
-                        title,
-                        slug: slugMatch[1],
-                        url,
-                        image,
-                        description: desc
-                    });
-                }
-            }
-        });
-
         res.json({
-            query,
+            query: query,
             results_count: results.length,
-            results
+            results: results
         });
-
+        
     } catch (error) {
         res.status(500).json({ error: 'Search failed', message: error.message });
     }
 });
 
-// Get anime info by TMDB ID
-app.get('/api/anime-info/:tmdbId', async (req, res) => {
-    const { tmdbId } = req.params;
-
-    try {
-        const animeSlug = await findAnimeSlug(tmdbId);
-        if (!animeSlug) {
-            return res.status(404).json({ error: 'Anime not found' });
-        }
-
-        const tmdbInfo = await getTMDBInfo(tmdbId);
-        const episodes = await getAnimeEpisodes(animeSlug);
-
-        res.json({
-            tmdb_id: tmdbId,
-            anime_slug: animeSlug,
-            info: tmdbInfo,
-            episodes_count: episodes.length,
-            episodes: episodes.slice(0, 20) // First 20 episodes
-        });
-
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch anime info' });
-    }
+// Get all predefined mappings
+app.get('/api/mappings', (req, res) => {
+    res.json({
+        total_mappings: Object.keys(animeMappings).length,
+        mappings: animeMappings
+    });
 });
 
 // Health check
@@ -461,25 +421,29 @@ app.get('/health', (req, res) => {
         status: 'OK',
         server: 'AnimeWorld TMDB API',
         timestamp: new Date().toISOString(),
-        cache_stats: {
-            anime_mappings: animeMappingCache.size,
-            episode_cache: episodeCache.size
-        }
+        total_predefined_mappings: Object.keys(animeMappings).length,
+        dynamic_mappings: dynamicMappings.size
     });
 });
 
 // Root endpoint
 app.get('/', (req, res) => {
     res.json({
-        message: 'AnimeWorld TMDB API Server',
-        version: '2.0',
+        message: '🎌 AnimeWorld TMDB API - Complete Player Links',
+        version: '3.0',
+        description: 'Fetches ALL video players and direct links from Animeworld',
         endpoints: {
-            '/api/anime/:tmdbId/:season/:episode': 'Get episode with video players',
+            '/api/anime/:tmdbId/:season/:episode': 'Get episode with ALL video players',
             '/api/search/:query': 'Search anime by name',
-            '/api/anime-info/:tmdbId': 'Get anime information',
+            '/api/mappings': 'Get all predefined TMDB mappings',
             '/health': 'Health check'
         },
-        example: '/api/anime/31910/1/1'
+        examples: {
+            one_piece: '/api/anime/31910/1/1',
+            naruto: '/api/anime/73223/1/1',
+            attack_on_titan: '/api/anime/46298/1/1'
+        },
+        supported_players: ['iframe', 'direct mp4', 'hls', 'embed', 'script sources']
     });
 });
 
@@ -488,10 +452,12 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Anime API Server running on port ${PORT}`);
     console.log('📺 Endpoints:');
-    console.log('   GET /api/anime/:tmdbId/:season/:episodeNum');
+    console.log('   GET /api/anime/:tmdbId/:season/:episode');
     console.log('   GET /api/search/:query');
-    console.log('   GET /api/anime-info/:tmdbId');
+    console.log('   GET /api/mappings');
     console.log('   GET /health');
+    console.log('');
+    console.log('🎬 Example: http://localhost:3000/api/anime/31910/1/1');
 });
 
 module.exports = app;
