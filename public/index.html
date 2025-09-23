@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Player - Dark Theme</title>
+    <title>Search - AnimeDark</title>
     <style>
         * {
             margin: 0;
@@ -31,6 +31,7 @@
             line-height: 1.6;
         }
 
+        /* Navigation */
         .navbar {
             background: var(--bg-darker);
             padding: 1rem 2rem;
@@ -40,7 +41,7 @@
             z-index: 1000;
         }
 
-        .nav-content {
+        .nav-container {
             max-width: 1200px;
             margin: 0 auto;
             display: flex;
@@ -55,17 +56,21 @@
             font-weight: bold;
             color: var(--accent);
             text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .search-container {
             flex: 1;
-            max-width: 400px;
-            position: relative;
+            max-width: 600px;
+            display: flex;
+            gap: 0.5rem;
         }
 
         .search-input {
-            width: 100%;
-            padding: 0.75rem 1rem 0.75rem 3rem;
+            flex: 1;
+            padding: 0.75rem 1rem;
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: 25px;
@@ -78,233 +83,110 @@
             border-color: var(--accent-secondary);
         }
 
-        .search-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-        }
-
-        .search-results {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            margin-top: 0.5rem;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .search-result {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
+        .search-btn {
+            background: var(--accent-secondary);
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            color: white;
             cursor: pointer;
+            transition: background 0.3s;
         }
 
-        .search-result:hover {
-            background: var(--bg-darker);
+        .search-btn:hover {
+            background: var(--accent);
         }
 
-        .search-result:last-child {
-            border-bottom: none;
-        }
-
+        /* Search Results */
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
 
-        .home-section {
-            text-align: center;
-            padding: 2rem 0;
-        }
-
-        .welcome {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-            color: var(--accent);
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
+        .search-header {
             margin-bottom: 2rem;
         }
 
-        .anime-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .anime-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .anime-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-secondary);
-        }
-
-        .anime-card h3 {
-            margin-bottom: 0.5rem;
-        }
-
-        .anime-card .id {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .watch-section {
-            display: none;
-        }
-
-        .player-header {
-            background: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: 10px 10px 0 0;
-            border: 1px solid var(--border);
-            border-bottom: none;
-        }
-
-        .anime-title {
+        .search-title {
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
-            color: var(--accent);
-        }
-
-        .episode-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .controls {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            background: var(--bg-darker);
-            border: 1px solid var(--border);
             color: var(--text-primary);
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
         }
 
-        .btn:hover {
-            background: var(--accent-secondary);
-            border-color: var(--accent-secondary);
+        .results-count {
+            color: var(--text-muted);
         }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .player-container {
-            background: #000;
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-        }
-
-        .player {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .servers {
-            background: var(--bg-card);
-            padding: 1rem 1.5rem;
-            border: 1px solid var(--border);
-            border-top: none;
-        }
-
-        .servers h3 {
-            margin-bottom: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .server-buttons {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .server-btn {
-            background: var(--bg-darker);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 0.5rem 1rem;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-        }
-
-        .server-btn:hover, .server-btn.active {
-            background: var(--accent);
-            color: var(--text-primary);
-            border-color: var(--accent);
-        }
-
-        .episodes-section {
-            margin-top: 2rem;
-        }
-
-        .episodes-section h3 {
-            margin-bottom: 1rem;
-            color: var(--text-secondary);
-        }
-
-        .episodes-grid {
+        /* YouTube-style Grid */
+        .results-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            gap: 0.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
         }
 
-        .episode-btn {
+        .result-card {
             background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 0.75rem 0.5rem;
-            border-radius: 5px;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s;
             cursor: pointer;
-            text-align: center;
-            transition: all 0.3s;
         }
 
-        .episode-btn:hover, .episode-btn.active {
-            background: var(--accent-secondary);
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .thumbnail {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: var(--bg-darker);
+        }
+
+        .result-info {
+            padding: 1rem;
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
             color: var(--text-primary);
-            border-color: var(--accent-secondary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .result-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .watch-btn {
+            background: var(--accent);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .watch-btn:hover {
+            background: var(--accent-secondary);
         }
 
         .loading {
             text-align: center;
             padding: 3rem;
-            display: none;
         }
 
         .spinner {
@@ -322,315 +204,155 @@
             100% { transform: rotate(360deg); }
         }
 
-        .message {
-            padding: 1rem;
-            border-radius: 5px;
-            margin: 1rem 0;
-            display: none;
-        }
-
         .error {
-            background: rgba(255, 107, 107, 0.1);
-            border: 1px solid var(--accent);
+            text-align: center;
+            padding: 2rem;
             color: var(--accent);
         }
 
-        .success {
-            background: rgba(102, 126, 234, 0.1);
-            border: 1px solid var(--accent-secondary);
-            color: var(--accent-secondary);
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
         }
 
         @media (max-width: 768px) {
-            .nav-content {
+            .nav-container {
                 flex-direction: column;
             }
-            
+
             .search-container {
-                max-width: 100%;
-            }
-            
-            .episode-info {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .controls {
                 width: 100%;
-                justify-content: center;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Navigation -->
     <nav class="navbar">
-        <div class="nav-content">
-            <a href="#" class="logo" onclick="showHome()">🎌 AnimeDark</a>
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <span>🎌</span>
+                <span>AnimeDark</span>
+            </a>
+            
             <div class="search-container">
-                <i class="search-icon">🔍</i>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search anime...">
-                <div class="search-results" id="searchResults"></div>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search for anime...">
+                <button class="search-btn" onclick="performSearch()">Search</button>
             </div>
         </div>
     </nav>
 
     <div class="container">
-        <!-- Home Section -->
-        <div class="home-section" id="homeSection">
-            <h1 class="welcome">Watch Anime</h1>
-            <p class="subtitle">Search above or select from popular anime</p>
-            
-            <div class="anime-grid" id="animeGrid">
-                <!-- Popular anime will be loaded here -->
-            </div>
+        <div class="search-header">
+            <h1 class="search-title" id="searchTitle">Search Results</h1>
+            <div class="results-count" id="resultsCount"></div>
         </div>
 
-        <!-- Watch Section -->
-        <div class="watch-section" id="watchSection">
-            <div class="player-header">
-                <h2 class="anime-title" id="animeTitle">Anime Title</h2>
-                <div class="episode-info">
-                    <div>Season <span id="currentSeason">1</span> • Episode <span id="currentEpisode">1</span></div>
-                    <div class="controls">
-                        <button class="btn" onclick="changeSeason(-1)" id="prevSeason">← Season</button>
-                        <button class="btn" onclick="changeEpisode(-1)" id="prevEpisode">← Ep</button>
-                        <button class="btn" onclick="changeEpisode(1)" id="nextEpisode">Ep →</button>
-                        <button class="btn" onclick="changeSeason(1)" id="nextSeason">Season →</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="player-container">
-                <iframe class="player" id="videoPlayer" allowfullscreen></iframe>
-            </div>
-
-            <div class="servers">
-                <h3>Servers</h3>
-                <div class="server-buttons" id="serverButtons">
-                    <!-- Server buttons will be loaded here -->
-                </div>
-            </div>
-
-            <div class="episodes-section">
-                <h3>Episodes - Season <span id="episodesSeason">1</span></h3>
-                <div class="episodes-grid" id="episodesGrid">
-                    <!-- Episode buttons will be loaded here -->
-                </div>
-            </div>
+        <div class="results-grid" id="resultsGrid">
+            <!-- Results will be loaded here -->
         </div>
 
-        <!-- Messages -->
-        <div class="message error" id="errorMessage"></div>
-        <div class="message success" id="successMessage"></div>
-
-        <!-- Loading -->
-        <div class="loading" id="loading">
+        <div class="loading" id="loading" style="display: none;">
             <div class="spinner"></div>
-            <p>Loading anime...</p>
+            <p>Searching...</p>
+        </div>
+
+        <div class="error" id="error" style="display: none;"></div>
+
+        <div class="no-results" id="noResults" style="display: none;">
+            <h3>No results found</h3>
+            <p>Try different search terms</p>
         </div>
     </div>
 
     <script>
-        // Current state
-        let currentAnime = {
-            id: null,
-            season: 1,
-            episode: 1
-        };
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q');
 
-        // Popular anime
-        const popularAnime = [
-            { id: 21, name: 'One Piece' },
-            { id: 20, name: 'Naruto' },
-            { id: 1735, name: 'Naruto Shippuden' },
-            { id: 16498, name: 'Attack on Titan' },
-            { id: 38000, name: 'Demon Slayer' },
-            { id: 113415, name: 'Jujutsu Kaisen' },
-            { id: 99147, name: 'Chainsaw Man' },
-            { id: 30015, name: 'Kaguya-sama' },
-            { id: 101759, name: 'Oshi no Ko' },
-            { id: 108632, name: 'Frieren' }
-        ];
-
-        // Initialize
-        function init() {
-            loadPopularAnime();
-            setupSearch();
-            loadAnime(21, 1, 1); // Load One Piece by default
+        // Initialize search
+        if (query) {
+            document.getElementById('searchInput').value = query;
+            performSearch();
         }
 
-        // Load popular anime grid
-        function loadPopularAnime() {
-            const grid = document.getElementById('animeGrid');
-            grid.innerHTML = '';
+        // Perform search function
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
 
-            popularAnime.forEach(anime => {
-                const card = document.createElement('div');
-                card.className = 'anime-card';
-                card.innerHTML = `
-                    <h3>${anime.name}</h3>
-                    <div class="id">ID: ${anime.id}</div>
-                `;
-                card.onclick = () => loadAnime(anime.id, 1, 1);
-                grid.appendChild(card);
-            });
-        }
-
-        // Setup search functionality
-        function setupSearch() {
-            const searchInput = document.getElementById('searchInput');
-            const searchResults = document.getElementById('searchResults');
-
-            searchInput.addEventListener('input', function() {
-                const query = this.value.toLowerCase().trim();
-                searchResults.innerHTML = '';
-                searchResults.style.display = 'none';
-
-                if (query.length > 2) {
-                    const results = popularAnime.filter(anime => 
-                        anime.name.toLowerCase().includes(query)
-                    );
-
-                    if (results.length > 0) {
-                        results.forEach(anime => {
-                            const result = document.createElement('div');
-                            result.className = 'search-result';
-                            result.textContent = `${anime.name} (ID: ${anime.id})`;
-                            result.onclick = () => {
-                                searchInput.value = '';
-                                searchResults.style.display = 'none';
-                                loadAnime(anime.id, 1, 1);
-                            };
-                            searchResults.appendChild(result);
-                        });
-                        searchResults.style.display = 'block';
-                    }
-                }
-            });
-
-            // Close results when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target)) {
-                    searchResults.style.display = 'none';
-                }
-            });
-        }
-
-        // Load anime function
-        async function loadAnime(anilistId, season, episode) {
             showLoading();
-            hideMessages();
-            hideHome();
+            hideResults();
+            hideError();
+            hideNoResults();
 
             try {
-                const response = await fetch(`/api/anime/${anilistId}/${season}/${episode}`);
+                const response = await fetch(`/api/search/${encodeURIComponent(query)}`);
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Failed to load anime');
+                    throw new Error(data.error || 'Search failed');
                 }
 
-                // Update state
-                currentAnime.id = anilistId;
-                currentAnime.season = season;
-                currentAnime.episode = episode;
-
-                // Update UI
-                updateAnimeInfo(data);
-                updateServers(data.players);
-                generateEpisodes(season, 24); // Assume 24 episodes per season
-
-                showSuccess(`Loaded ${data.anime_slug}`);
-                showWatchSection();
+                displayResults(data.results, query);
 
             } catch (error) {
                 showError(error.message);
-                showHome();
             } finally {
                 hideLoading();
             }
         }
 
-        // Update anime info
-        function updateAnimeInfo(data) {
-            document.getElementById('animeTitle').textContent = 
-                data.anime_slug.replace(/-/g, ' ') + ' - ' + data.title;
-            document.getElementById('currentSeason').textContent = currentAnime.season;
-            document.getElementById('currentEpisode').textContent = currentAnime.episode;
-            document.getElementById('episodesSeason').textContent = currentAnime.season;
-        }
+        // Display results
+        function displayResults(results, query) {
+            const grid = document.getElementById('resultsGrid');
+            const title = document.getElementById('searchTitle');
+            const count = document.getElementById('resultsCount');
 
-        // Update servers
-        function updateServers(players) {
-            const container = document.getElementById('serverButtons');
-            container.innerHTML = '';
+            title.textContent = `Search: "${query}"`;
+            count.textContent = `${results.length} results found`;
 
-            players.forEach((player, index) => {
-                const btn = document.createElement('button');
-                btn.className = 'server-btn' + (index === 0 ? ' active' : '');
-                btn.textContent = player.server;
-                btn.onclick = () => switchServer(player.url, btn);
-                container.appendChild(btn);
-            });
-
-            if (players.length > 0) {
-                switchServer(players[0].url);
-            }
-        }
-
-        // Generate episode buttons
-        function generateEpisodes(season, totalEpisodes) {
-            const grid = document.getElementById('episodesGrid');
             grid.innerHTML = '';
 
-            for (let i = 1; i <= totalEpisodes; i++) {
-                const btn = document.createElement('button');
-                btn.className = 'episode-btn' + (i === currentAnime.episode ? ' active' : '');
-                btn.textContent = i;
-                btn.onclick = () => loadAnime(currentAnime.id, season, i);
-                grid.appendChild(btn);
+            if (results.length === 0) {
+                showNoResults();
+                return;
             }
-        }
 
-        // Switch server
-        function switchServer(url, button = null) {
-            document.querySelectorAll('.server-btn').forEach(btn => {
-                btn.classList.remove('active');
+            results.forEach(result => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `
+                    <img src="${result.image || 'https://via.placeholder.com/300x180/1a1a1a/666666?text=No+Image'}" 
+                         alt="${result.title}" class="thumbnail">
+                    <div class="result-info">
+                        <h3 class="result-title">${result.title}</h3>
+                        <p class="result-description">${result.description || 'No description available'}</p>
+                        <button class="watch-btn" onclick="watchAnime('${result.slug}')">
+                            Watch Now
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
             });
-            if (button) button.classList.add('active');
-            document.getElementById('videoPlayer').src = url;
+
+            grid.style.display = 'grid';
         }
 
-        // Navigation
-        function changeEpisode(delta) {
-            const newEpisode = currentAnime.episode + delta;
-            if (newEpisode >= 1) {
-                loadAnime(currentAnime.id, currentAnime.season, newEpisode);
-            }
-        }
-
-        function changeSeason(delta) {
-            const newSeason = currentAnime.season + delta;
-            if (newSeason >= 1) {
-                loadAnime(currentAnime.id, newSeason, 1);
-            }
+        // Watch anime function
+        function watchAnime(slug) {
+            // For now, redirect to home with the slug
+            // In a real app, you'd map slug to Anilist ID
+            window.location.href = `/`;
+            alert(`Would load anime with slug: ${slug}\nIn a real app, this would map to Anilist ID`);
         }
 
         // UI functions
-        function showHome() {
-            document.getElementById('homeSection').style.display = 'block';
-            document.getElementById('watchSection').style.display = 'none';
-            hideMessages();
-        }
-
-        function hideHome() {
-            document.getElementById('homeSection').style.display = 'none';
-        }
-
-        function showWatchSection() {
-            document.getElementById('watchSection').style.display = 'block';
-        }
-
         function showLoading() {
             document.getElementById('loading').style.display = 'block';
         }
@@ -639,25 +361,33 @@
             document.getElementById('loading').style.display = 'none';
         }
 
+        function hideResults() {
+            document.getElementById('resultsGrid').style.display = 'none';
+        }
+
         function showError(message) {
-            const el = document.getElementById('errorMessage');
-            el.textContent = message;
-            el.style.display = 'block';
+            document.getElementById('error').textContent = message;
+            document.getElementById('error').style.display = 'block';
         }
 
-        function showSuccess(message) {
-            const el = document.getElementById('successMessage');
-            el.textContent = message;
-            el.style.display = 'block';
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
         }
 
-        function hideMessages() {
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'none';
+        function showNoResults() {
+            document.getElementById('noResults').style.display = 'block';
         }
 
-        // Start the app
-        document.addEventListener('DOMContentLoaded', init);
+        function hideNoResults() {
+            document.getElementById('noResults').style.display = 'none';
+        }
+
+        // Enter key support
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
     </script>
 </body>
 </html>
