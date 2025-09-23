@@ -36,13 +36,7 @@ const ANIME_MAPPINGS = {
     '11757': 'fairy-tail',
     '23283': 'sword-art-online',
     '11061': 'tokyo-ghoul',
-    '456': 'fullmetal-alchemist-brotherhood',
-    '20583': 'noragami',
-    '2167': 'clannad',
-    '5114': 'bakuman',
-    '5529': 'soul-eater',
-    '61': 'dragon-ball',
-    '813': 'dragon-ball-z'
+    '456': 'fullmetal-alchemist-brotherhood'
 };
 
 // ========== SEARCH FUNCTION ==========
@@ -246,9 +240,13 @@ app.get('/api/search/:query', async (req, res) => {
     }
 });
 
-// Serve index.html
+// Serve pages
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/search', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
 
 // Health check
@@ -264,7 +262,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Anime API running on port ${PORT}`);
     console.log(`📺 ${Object.keys(ANIME_MAPPINGS).length} anime loaded!`);
-    console.log('🌐 Open http://localhost:3000 for the player');
+    console.log('🌐 Open http://localhost:3000');
 });
 
 module.exports = app;
