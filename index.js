@@ -12,18 +12,8 @@ app.use((req, res, next) => {
     next();
 });
 
-// Anilist API Configuration
-const ANILIST_CONFIG = {
-    url: 'https://graphql.anilist.co',
-    headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
-};
-
-// Predefined Anilist to Animeworld mappings (WORKING ONES FROM OLD CHAT)
+// Predefined Anilist to Animeworld mappings (WORKING ONES)
 const animeMappings = {
-    // ✅ VERIFIED WORKING MAPPINGS (from our previous working version)
     '21': 'one-piece',                 // One Piece
     '20': 'naruto',                    // Naruto
     '1735': 'naruto-shippuden',        // Naruto Shippuden
@@ -31,7 +21,6 @@ const animeMappings = {
     '38000': 'demon-slayer-kimetsu-no-yaiba', // Demon Slayer
     '113415': 'jujutsu-kaisen',        // Jujutsu Kaisen
     '99147': 'chainsaw-man',           // Chainsaw Man
-    '75989': 'vinland-saga',           // Vinland Saga
     '101922': 'hells-paradise',        // Hell's Paradise
     '104': 'bleach',                   // Bleach
     '1535': 'death-note',              // Death Note
@@ -58,118 +47,235 @@ const animeMappings = {
     '131681': 'sousou-no-frieren'      // Sousou no Frieren
 };
 
-// Cache for performance
-const cache = new Map();
+// -------- EXACT OG PLAYER EXTRACTION CODE --------
 
-// -------- ANILIST API FUNCTIONS --------
+// FUNCTION TO EXTRACT REAL VIDEO PLAYERS (FROM OG WORKING CODE)
+function extractRealVideoPlayers(html, episodeUrl) {
+    const $ = cheerio.load(html);
+    const players = [];
 
-// Get anime info from Anilist
-async function getAnilistInfo(anilistId) {
-    const cacheKey = `anilist-${anilistId}`;
-    if (cache.has(cacheKey)) return cache.get(cacheKey);
+    console.log('🎬 EXTRACTING REAL VIDEO PLAYERS...');
 
-    const query = `
-        query ($id: Int) {
-            Media (id: $id, type: ANIME) {
-                id
-                title {
-                    romaji
-                    english
-                    native
+    // 1. FIRST: Look for the main video container (OG METHOD)
+    const videoContainers = [
+        '.video-container',
+        '.player-container',
+        '.embed-container',
+        '.video-player',
+        '.player',
+        '.watch-main',
+        '.entry-content'
+    ];
+
+    for (const container of videoContainers) {
+        $(container).each((i, el) => {
+            // Look for iframes inside containers
+            $(el).find('iframe').each((j, iframe) => {
+                const src = $(iframe).attr('src');
+                if (src && isValidVideoUrl(src)) {
+                    players.push({
+                        type: 'embed',
+                        server: `Main Server ${players.length + 1}`,
+                        url: makeAbsoluteUrl(src, episodeUrl),
+                        quality: 'HD',
+                        format: 'iframe',
+                        source: 'container'
+                    });
                 }
-                description
-                episodes
-                duration
-                status
-                startDate {
-                    year
-                    month
-                    day
+            });
+
+            // Look for video tags
+            $(el).find('video').each((j, video) => {
+                const src = $(video).attr('src');
+                if (src) {
+                    players.push({
+                        type: 'direct',
+                        server: `Direct Video ${players.length + 1}`,
+                        url: makeAbsoluteUrl(src, episodeUrl),
+                        quality: 'Auto',
+                        format: 'mp4',
+                        source: 'video-tag'
+                    });
                 }
-                endDate {
-                    year
-                    month
-                    day
-                }
-                coverImage {
-                    large
-                    extraLarge
-                }
-                bannerImage
-                genres
-                averageScore
-                popularity
-                siteUrl
+
+                // Video sources
+                $(video).find('source').each((k, source) => {
+                    const src = $(source).attr('src');
+                    if (src) {
+                        players.push({
+                            type: 'direct',
+                            server: `Video Source ${players.length + 1}`,
+                            url: makeAbsoluteUrl(src, episodeUrl),
+                            quality: 'HD',
+                            format: getFormatFromUrl(src),
+                            source: 'video-source'
+                        });
+                    }
+                });
+            });
+        });
+    }
+
+    // 2. SECOND: Extract ALL iframes from entire page
+    $('iframe').each((i, iframe) => {
+        const src = $(iframe).attr('src');
+        const dataSrc = $(iframe).attr('data-src');
+        
+        // Check main src
+        if (src && isValidVideoUrl(src)) {
+            if (!players.some(p => p.url === makeAbsoluteUrl(src, episodeUrl))) {
+                players.push({
+                    type: 'embed',
+                    server: `Iframe Server ${players.length + 1}`,
+                    url: makeAbsoluteUrl(src, episodeUrl),
+                    quality: 'HD',
+                    format: 'iframe',
+                    source: 'iframe-src'
+                });
             }
         }
-    `;
-
-    const variables = { id: parseInt(anilistId) };
-
-    try {
-        const response = await axios.post(ANILIST_CONFIG.url, {
-            query: query,
-            variables: variables
-        }, {
-            headers: ANILIST_CONFIG.headers,
-            timeout: 10000
-        });
-
-        const data = response.data.data.Media;
-        cache.set(cacheKey, data);
-        return data;
-    } catch (error) {
-        console.log(`❌ Anilist Error for ${anilistId}:`, error.message);
-        return null;
-    }
-}
-
-// Search anime on Anilist
-async function searchAnilistAnime(searchTerm) {
-    const query = `
-        query ($search: String) {
-            Page (page: 1, perPage: 10) {
-                media (search: $search, type: ANIME) {
-                    id
-                    title {
-                        romaji
-                        english
-                        native
-                    }
-                    description
-                    episodes
-                    coverImage {
-                        large
-                    }
-                    averageScore
-                    popularity
-                    siteUrl
-                }
+        
+        // Check data-src
+        if (dataSrc && isValidVideoUrl(dataSrc)) {
+            if (!players.some(p => p.url === makeAbsoluteUrl(dataSrc, episodeUrl))) {
+                players.push({
+                    type: 'embed',
+                    server: `Iframe Server ${players.length + 1}`,
+                    url: makeAbsoluteUrl(dataSrc, episodeUrl),
+                    quality: 'HD',
+                    format: 'iframe',
+                    source: 'iframe-data-src'
+                });
             }
         }
-    `;
+    });
 
-    const variables = { search: searchTerm };
+    // 3. THIRD: Advanced script extraction for hidden players
+    $('script').each((i, script) => {
+        const scriptContent = $(script).html();
+        if (scriptContent) {
+            // Look for common video player patterns
+            const patterns = [
+                // MP4 files
+                /(https?:\/\/[^\s"']*\.mp4[^\s"']*)/gi,
+                // M3U8 streams
+                /(https?:\/\/[^\s"']*\.m3u8[^\s"']*)/gi,
+                // Common video hosting domains
+                /(https?:\/\/[^\s"']*(streamtape|dood|mixdrop|mp4upload|vidstream|gogocdn)[^\s"']*)/gi,
+                // Base64 encoded URLs
+                /(https?:\/\/[^\s"']*\/[a-zA-Z0-9]{20,}[^\s"']*)/gi,
+                // JSON video data
+                /"file":"([^"]+)"/gi,
+                /"url":"([^"]+)"/gi,
+                /"src":"([^"]+)"/gi,
+                /source:\s*["']([^"']+)["']/gi,
+                /file:\s*["']([^"']+)["']/gi
+            ];
 
-    try {
-        const response = await axios.post(ANILIST_CONFIG.url, {
-            query: query,
-            variables: variables
-        }, {
-            headers: ANILIST_CONFIG.headers,
-            timeout: 10000
+            patterns.forEach(pattern => {
+                const matches = scriptContent.match(pattern);
+                if (matches) {
+                    matches.forEach(match => {
+                        let url = match.replace(/["']/g, '').replace(/file:|url:|src:|source:/g, '').trim();
+                        
+                        if (url.startsWith('//')) {
+                            url = 'https:' + url;
+                        }
+                        
+                        if (isValidVideoUrl(url) && !players.some(p => p.url === url)) {
+                            players.push({
+                                type: 'direct',
+                                server: `Hidden Server ${players.length + 1}`,
+                                url: url,
+                                quality: 'HD',
+                                format: getFormatFromUrl(url),
+                                source: 'script'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+    // 4. FOURTH: Check for alternative video providers
+    const alternativeSelectors = [
+        'a[href*="watch"]',
+        'a[href*="video"]',
+        'a[href*="embed"]',
+        'a[href*="stream"]',
+        '.download-btn',
+        '.watch-link',
+        '.server-item'
+    ];
+
+    alternativeSelectors.forEach(selector => {
+        $(selector).each((i, el) => {
+            const href = $(el).attr('href');
+            if (href && href.includes('http') && isValidVideoUrl(href)) {
+                if (!players.some(p => p.url === href)) {
+                    players.push({
+                        type: 'redirect',
+                        server: `Redirect Server ${players.length + 1}`,
+                        url: href,
+                        quality: 'HD',
+                        format: 'redirect',
+                        source: 'link'
+                    });
+                }
+            }
         });
+    });
 
-        return response.data.data.Page.media;
-    } catch (error) {
-        console.log('Anilist Search Error:', error.message);
-        return [];
-    }
+    console.log(`🎯 FOUND ${players.length} REAL VIDEO PLAYERS!`);
+    return players;
 }
 
-// -------- ANIMEWORLD FUNCTIONS (FROM OLD WORKING CODE) --------
+// Helper function to check if URL is a valid video URL
+function isValidVideoUrl(url) {
+    if (!url) return false;
+    
+    const videoDomains = [
+        'streamtape.com', 'dood.to', 'doodstream.com', 'mixdrop.co',
+        'mp4upload.com', 'vidstream.pro', 'gogocdn.com', 'play.zephyrflick.top',
+        'embtaku.pro', 'watchsb.com', 'videovard.sx', 'voe.sx'
+    ];
+    
+    const videoExtensions = ['.mp4', '.m3u8', '.webm', '.mkv', '.avi'];
+    
+    return videoDomains.some(domain => url.includes(domain)) ||
+           videoExtensions.some(ext => url.includes(ext)) ||
+           url.includes('/embed/') ||
+           url.includes('/video/');
+}
 
-// Search anime on Animeworld (EXACTLY LIKE BEFORE)
+// Helper function to make URL absolute
+function makeAbsoluteUrl(url, baseUrl) {
+    if (url.startsWith('//')) {
+        return 'https:' + url;
+    }
+    if (url.startsWith('/')) {
+        const base = new URL(baseUrl);
+        return base.origin + url;
+    }
+    if (!url.startsWith('http')) {
+        return 'https://' + url;
+    }
+    return url;
+}
+
+// Helper function to get format from URL
+function getFormatFromUrl(url) {
+    if (url.includes('.m3u8')) return 'hls';
+    if (url.includes('.mp4')) return 'mp4';
+    if (url.includes('.webm')) return 'webm';
+    if (url.includes('/embed/')) return 'iframe';
+    return 'auto';
+}
+
+// -------- ANIMEWORLD FUNCTIONS --------
+
+// Search anime on Animeworld
 async function searchAnimeOnAnimeworld(searchTerm) {
     try {
         const searchUrl = `https://watchanimeworld.in/?s=${encodeURIComponent(searchTerm)}`;
@@ -189,7 +295,6 @@ async function searchAnimeOnAnimeworld(searchTerm) {
             const title = $(el).find('h2 a').text().trim();
             const url = $(el).find('h2 a').attr('href');
             const image = $(el).find('img').attr('src');
-            const description = $(el).find('p').text().trim();
             
             if (title && url && url.includes('/anime/')) {
                 const slugMatch = url.match(/\/anime\/([^\/]+)\//);
@@ -198,147 +303,61 @@ async function searchAnimeOnAnimeworld(searchTerm) {
                         title: title,
                         slug: slugMatch[1],
                         url: url,
-                        image: image,
-                        description: description
+                        image: image
                     });
                 }
             }
         });
 
-        return results;
+        return results.length > 0 ? results[0] : null;
     } catch (error) {
         console.error('Search error:', error.message);
-        return [];
+        return null;
     }
 }
 
-// Get anime slug from Anilist ID (SMART MAPPING)
+// Get anime slug from Anilist ID
 async function getAnimeSlug(anilistId) {
-    // Check predefined mappings first (FROM OUR WORKING VERSION)
     if (animeMappings[anilistId]) {
-        console.log(`✅ Using predefined mapping: Anilist ${anilistId} -> ${animeMappings[anilistId]}`);
+        console.log(`✅ Using mapping: ${anilistId} -> ${animeMappings[anilistId]}`);
         return animeMappings[anilistId];
     }
     
-    // Check cache
-    const cacheKey = `slug-${anilistId}`;
-    if (cache.has(cacheKey)) {
-        return cache.get(cacheKey);
-    }
+    // Fallback search
+    const searchTerms = [`Anilist ${anilistId}`];
     
-    // Get anime info from Anilist
-    const anilistInfo = await getAnilistInfo(anilistId);
-    if (!anilistInfo) {
-        return null;
-    }
-
-    console.log(`🔍 Mapping: "${anilistInfo.title.english || anilistInfo.title.romaji}"`);
-
-    // Try different search terms
-    const searchTerms = [
-        anilistInfo.title.english,
-        anilistInfo.title.romaji,
-        anilistInfo.title.native,
-        anilistInfo.title.english?.replace(/[^a-zA-Z0-9 ]/g, ' ').trim(),
-        anilistInfo.title.romaji?.replace(/[^a-zA-Z0-9 ]/g, ' ').trim()
-    ].filter(term => term && term.length > 2);
-
     for (const term of searchTerms) {
-        const results = await searchAnimeOnAnimeworld(term);
-        if (results.length > 0) {
-            const slug = results[0].slug;
-            cache.set(cacheKey, slug);
-            console.log(`✅ Found: "${term}" -> ${slug}`);
-            return slug;
+        const result = await searchAnimeOnAnimeworld(term);
+        if (result) {
+            return result.slug;
         }
     }
-
-    console.log(`❌ No mapping found for Anilist ${anilistId}`);
+    
     return null;
 }
 
-// -------- PLAYER EXTRACTION (EXACTLY LIKE OUR WORKING VERSION) --------
-
-// Extract video players (FROM OLD WORKING CODE)
-function extractVideoPlayers(html) {
-    const $ = cheerio.load(html);
-    const players = [];
-
-    console.log('🎬 Extracting players...');
-
-    // Extract iframe embeds (MAIN METHOD THAT WORKED)
-    $('iframe').each((i, el) => {
-        const src = $(el).attr('src');
-        if (src && src.includes('//')) {
-            const fullUrl = src.startsWith('//') ? `https:${src}` : src;
-            players.push({
-                type: 'embed',
-                server: `Server ${players.length + 1}`,
-                url: fullUrl,
-                quality: 'HD',
-                format: 'iframe'
-            });
-            console.log(`✅ Found iframe: ${fullUrl}`);
-        }
-    });
-
-    // Extract from scripts (BACKUP METHOD)
-    const scripts = $('script');
-    scripts.each((i, el) => {
-        const scriptContent = $(el).html();
-        if (scriptContent) {
-            const videoPatterns = [
-                /(https?:\/\/[^\s"']*\.(mp4|m3u8|webm)[^\s"']*)/gi,
-                /(https?:\/\/[^\s"']*\/embed\/[^\s"']*)/gi,
-                /(https?:\/\/[^\s"']*\/video\/[^\s"']*)/gi,
-            ];
-            
-            videoPatterns.forEach(pattern => {
-                const matches = scriptContent.match(pattern);
-                if (matches) {
-                    matches.forEach(match => {
-                        if (match.includes('http')) {
-                            players.push({
-                                type: 'direct',
-                                server: `Direct ${players.length + 1}`,
-                                url: match.replace(/["']/g, ''),
-                                quality: 'HD',
-                                format: 'auto'
-                            });
-                        }
-                    });
-                }
-            });
-        }
-    });
-
-    console.log(`🎯 Total players found: ${players.length}`);
-    return players;
-}
-
-// Get episode data (EXACTLY LIKE BEFORE)
-async function getEpisodePlayers(animeSlug, season, episode) {
+// Get episode with REAL players
+async function getEpisodeWithRealPlayers(animeSlug, season, episode) {
     const urlAttempts = [
         `https://watchanimeworld.in/episode/${animeSlug}-episode-${episode}/`,
         `https://watchanimeworld.in/episode/${animeSlug}-${season}x${episode}/`,
         `https://watchanimeworld.in/episode/${animeSlug}-${episode}/`,
-        `https://watchanimeworld.in/episode/${animeSlug}-season-${season}-episode-${episode}/`,
     ];
-    
+
     for (const url of urlAttempts) {
         try {
-            console.log(`🌐 Trying: ${url}`);
+            console.log(`🌐 Fetching: ${url}`);
             const response = await axios.get(url, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                     'Accept-Language': 'en-US,en;q=0.9',
                     'Referer': 'https://watchanimeworld.in/'
                 },
-                timeout: 10000
+                timeout: 15000
             });
-            
+
             if (response.status === 200) {
-                const players = extractVideoPlayers(response.data);
+                const players = extractRealVideoPlayers(response.data, url);
                 
                 if (players.length > 0) {
                     const $ = cheerio.load(response.data);
@@ -348,8 +367,7 @@ async function getEpisodePlayers(animeSlug, season, episode) {
                         title: $('h1.entry-title').text().trim() || `Episode ${episode}`,
                         description: $('div.entry-content p').first().text().trim() || '',
                         thumbnail: $('.post-thumbnail img').attr('src') || '',
-                        players: players,
-                        total_players: players.length
+                        players: players
                     };
                 }
             }
@@ -364,177 +382,80 @@ async function getEpisodePlayers(animeSlug, season, episode) {
 
 // -------- API ENDPOINTS --------
 
-// Main endpoint: Get anime episode with players (ANILIST VERSION)
+// Main endpoint: Get episode with REAL players
 app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
     const { anilistId, season, episode } = req.params;
     
-    console.log(`\n🎌 FETCHING: Anilist ${anilistId}, Season ${season}, Episode ${episode}`);
+    console.log(`\n🎌 FETCHING REAL PLAYERS: ${anilistId}, S${season}, E${episode}`);
 
-    // Validate Anilist ID
     if (!/^\d+$/.test(anilistId)) {
-        return res.status(400).json({ error: 'Invalid Anilist ID format' });
+        return res.status(400).json({ error: 'Invalid Anilist ID' });
     }
 
     const seasonNum = parseInt(season);
     const episodeNum = parseInt(episode);
 
     if (isNaN(seasonNum) || isNaN(episodeNum)) {
-        return res.status(400).json({ error: 'Invalid season or episode number' });
+        return res.status(400).json({ error: 'Invalid season/episode' });
     }
 
     try {
-        // Step 1: Get anime slug from Anilist ID
-        console.log(`🔍 Getting anime slug...`);
         const animeSlug = await getAnimeSlug(anilistId);
-        
         if (!animeSlug) {
-            const anilistInfo = await getAnilistInfo(anilistId);
-            return res.status(404).json({ 
-                error: 'Anime not found on Animeworld',
-                anilist_id: anilistId,
-                anilist_name: anilistInfo ? (anilistInfo.title.english || anilistInfo.title.romaji) : 'Unknown',
-                suggestion: 'Try using a verified Anilist ID from /api/mappings'
-            });
+            return res.status(404).json({ error: 'Anime not found' });
         }
 
-        // Step 2: Get episode players (EXACTLY LIKE OUR WORKING VERSION)
-        console.log(`🎬 Fetching episode players...`);
-        const episodeData = await getEpisodePlayers(animeSlug, seasonNum, episodeNum);
-        
+        const episodeData = await getEpisodeWithRealPlayers(animeSlug, seasonNum, episodeNum);
         if (!episodeData.success) {
-            return res.status(404).json({ 
-                error: 'Episode not found or no players available',
-                anilist_id: anilistId,
-                anime_slug: animeSlug,
-                season: seasonNum,
-                episode: episodeNum
-            });
+            return res.status(404).json({ error: 'No players found' });
         }
 
-        // Step 3: Get Anilist info for metadata
-        const anilistInfo = await getAnilistInfo(anilistId);
-
-        // Step 4: Success response (SAME FORMAT AS BEFORE)
-        console.log(`✅ SUCCESS: Found ${episodeData.players.length} players!`);
+        // ✅ RETURN REAL WORKING PLAYERS LIKE OG CODE
         res.json({
             success: true,
             anilist_id: anilistId,
             anime_slug: animeSlug,
             season: seasonNum,
             episode: episodeNum,
-            
-            // Episode info
             title: episodeData.title,
             description: episodeData.description,
             thumbnail: episodeData.thumbnail,
             source_url: episodeData.url,
-            
-            // Anilist metadata
-            anilist_info: anilistInfo ? {
-                title: anilistInfo.title,
-                description: anilistInfo.description,
-                episodes: anilistInfo.episodes,
-                coverImage: anilistInfo.coverImage,
-                averageScore: anilistInfo.averageScore,
-                popularity: anilistInfo.popularity,
-                siteUrl: anilistInfo.siteUrl
-            } : null,
-            
-            // Players (EXACTLY LIKE BEFORE)
             total_players: episodeData.players.length,
             players: episodeData.players,
             available_servers: episodeData.players.map(p => p.server),
-            
             timestamp: new Date().toISOString(),
-            message: `🎉 Successfully fetched ${episodeData.players.length} players!`
+            message: `🎉 Found ${episodeData.players.length} REAL video players!`
         });
 
     } catch (error) {
-        console.error('💥 Server error:', error.message);
-        res.status(500).json({ 
-            error: 'Failed to fetch episode data',
-            message: error.message
-        });
+        res.status(500).json({ error: 'Server error', message: error.message });
     }
-});
-
-// Search anime on Anilist
-app.get('/api/search/:query', async (req, res) => {
-    const { query } = req.params;
-    
-    try {
-        const results = await searchAnilistAnime(query);
-        
-        res.json({
-            query: query,
-            results_count: results.length,
-            results: results.map(anime => ({
-                id: anime.id,
-                title: anime.title,
-                description: anime.description,
-                episodes: anime.episodes,
-                coverImage: anime.coverImage,
-                averageScore: anime.averageScore,
-                popularity: anime.popularity,
-                siteUrl: anime.siteUrl
-            }))
-        });
-        
-    } catch (error) {
-        res.status(500).json({ error: 'Search failed', message: error.message });
-    }
-});
-
-// Get all verified mappings
-app.get('/api/mappings', (req, res) => {
-    res.json({
-        message: '✅ VERIFIED ANILIST MAPPINGS (FROM OUR WORKING VERSION)',
-        total: Object.keys(animeMappings).length,
-        mappings: animeMappings
-    });
 });
 
 // Health check
 app.get('/health', (req, res) => {
     res.json({ 
         status: 'OK',
-        server: 'AnimeWorld Anilist API',
-        timestamp: new Date().toISOString(),
-        verified_mappings: Object.keys(animeMappings).length
+        server: 'REAL Player Extraction API',
+        timestamp: new Date().toISOString()
     });
 });
 
-// Root endpoint
 app.get('/', (req, res) => {
     res.json({
-        message: '🎌 AnimeWorld Anilist API - EXACT WORKING VERSION',
-        version: '7.0',
-        description: 'Uses Anilist IDs instead of TMDB - Same working player extraction',
-        endpoints: {
-            '/api/anime/:anilistId/:season/:episode': 'Get episode with players (ANILIST)',
-            '/api/search/:query': 'Search anime on Anilist',
-            '/api/mappings': 'Get verified Anilist mappings'
-        },
-        verified_examples: {
-            'one_piece': '/api/anime/21/1/1',
-            'naruto': '/api/anime/20/1/1',
-            'attack_on_titan': '/api/anime/16498/1/1',
-            'demon_slayer': '/api/anime/38000/1/1'
-        },
-        note: 'Uses the EXACT same player extraction that was working before!'
+        message: '🎌 REAL Video Player API - OG CODE',
+        version: '8.0',
+        description: 'Extracts ACTUAL video players like the original working code',
+        endpoint: '/api/anime/:anilistId/:season/:episode',
+        example: '/api/anime/20/1/1'
     });
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 AnimeWorld Anilist API running on port ${PORT}`);
-    console.log('✅ USING EXACT WORKING CODE FROM BEFORE!');
-    console.log('📺 Verified endpoints:');
-    console.log('   /api/anime/21/1/1     (One Piece)');
-    console.log('   /api/anime/20/1/1      (Naruto)');
-    console.log('   /api/anime/16498/1/1   (Attack on Titan)');
-    console.log('   /api/anime/38000/1/1   (Demon Slayer)');
+    console.log(`🚀 REAL Player API running on port ${PORT}`);
+    console.log('✅ EXTRACTING ACTUAL VIDEO PLAYERS!');
 });
 
 module.exports = app;
