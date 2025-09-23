@@ -5,7 +5,7 @@ const path = require('path');
 
 const app = express();
 
-// Enable CORS and serve static files
+// Enable CORS
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -39,55 +39,10 @@ const ANIME_MAPPINGS = {
     '456': 'fullmetal-alchemist-brotherhood'
 };
 
-// ========== SEARCH FUNCTION ==========
-async function searchAnimeworld(query) {
-    try {
-        const searchUrl = `https://watchanimeworld.in/?s=${encodeURIComponent(query)}`;
-        
-        const response = await axios.get(searchUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept-Language': 'en-US,en;q=0.9'
-            },
-            timeout: 10000
-        });
-
-        const $ = cheerio.load(response.data);
-        const results = [];
-
-        $('article').each((i, el) => {
-            const title = $(el).find('h2 a').text().trim();
-            const url = $(el).find('h2 a').attr('href');
-            const image = $(el).find('img').attr('src');
-            const description = $(el).find('p').text().trim();
-            
-            if (title && url && url.includes('/anime/')) {
-                const slugMatch = url.match(/\/anime\/([^\/]+)\//);
-                if (slugMatch && slugMatch[1]) {
-                    results.push({
-                        title: title,
-                        slug: slugMatch[1],
-                        url: url,
-                        image: image,
-                        description: description
-                    });
-                }
-            }
-        });
-
-        return results;
-    } catch (error) {
-        console.error('Search error:', error.message);
-        return [];
-    }
-}
-
 // ========== PLAYER EXTRACTION ==========
 function extractVideoPlayers(html) {
     const $ = cheerio.load(html);
     const players = [];
-
-    console.log('🎬 Extracting video players...');
 
     // Extract iframes
     $('iframe').each((i, el) => {
@@ -104,38 +59,6 @@ function extractVideoPlayers(html) {
         }
     });
 
-    // Extract from scripts
-    $('script').each((i, el) => {
-        const scriptContent = $(el).html();
-        if (scriptContent) {
-            const patterns = [
-                /https?:\/\/[^\s"']*\.(mp4|m3u8|webm)[^\s"']*/gi,
-                /https?:\/\/[^\s"']*\/embed\/[^\s"']*/gi,
-                /https?:\/\/[^\s"']*\/video\/[^\s"']*/gi,
-            ];
-
-            patterns.forEach(pattern => {
-                const matches = scriptContent.match(pattern);
-                if (matches) {
-                    matches.forEach(match => {
-                        let url = match.replace(/["']/g, '');
-                        if (url.startsWith('//')) url = 'https:' + url;
-                        if (url.includes('http') && !players.some(p => p.url === url)) {
-                            players.push({
-                                type: 'direct',
-                                server: `Direct ${players.length + 1}`,
-                                url: url,
-                                quality: 'HD',
-                                format: 'auto'
-                            });
-                        }
-                    });
-                }
-            });
-        }
-    });
-
-    console.log(`🎯 Found ${players.length} players`);
     return players;
 }
 
@@ -154,7 +77,6 @@ async function getEpisodeData(animeSlug, season, episode) {
 
     for (const url of urlAttempts) {
         try {
-            console.log(`🌐 Trying: ${url}`);
             const response = await axios.get(url, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -172,14 +94,11 @@ async function getEpisodeData(animeSlug, season, episode) {
                         success: true,
                         url: url,
                         title: $('h1.entry-title').text().trim() || `Episode ${episode}`,
-                        description: $('div.entry-content p').first().text().trim() || '',
-                        thumbnail: $('.post-thumbnail img').attr('src') || '',
                         players: players
                     };
                 }
             }
         } catch (error) {
-            console.log(`Failed: ${url}`);
             continue;
         }
     }
@@ -189,11 +108,9 @@ async function getEpisodeData(animeSlug, season, episode) {
 
 // ========== API ENDPOINTS ==========
 
-// Main anime endpoint
+// Main API endpoint
 app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
     const { anilistId, season, episode } = req.params;
-
-    console.log(`🎌 Fetching: ${anilistId}, S${season}, E${episode}`);
 
     try {
         const animeSlug = await getAnimeSlug(anilistId);
@@ -210,59 +127,124 @@ app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
             season: parseInt(season),
             episode: parseInt(episode),
             title: episodeData.title,
-            description: episodeData.description,
-            thumbnail: episodeData.thumbnail,
             source_url: episodeData.url,
-            total_players: episodeData.players.length,
-            players: episodeData.players,
-            available_servers: episodeData.players.map(p => p.server),
-            timestamp: new Date().toISOString()
+            players: episodeData.players
         });
 
     } catch (error) {
-        res.status(500).json({ error: 'Server error', message: error.message });
+        res.status(500).json({ error: 'Server error' });
     }
 });
 
-// Search endpoint
-app.get('/api/search/:query', async (req, res) => {
-    const { query } = req.params;
-    
+// ========== EMBED ENDPOINT ==========
+app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
+    const { anilistId, episode, language = 'sub' } = req.params;
+    const season = 1; // Default season
+
     try {
-        const results = await searchAnimeworld(query);
-        res.json({
-            success: true,
-            query: query,
-            results: results
-        });
+        const animeSlug = await getAnimeSlug(anilistId);
+        const episodeData = await getEpisodeData(animeSlug, season, parseInt(episode));
+
+        if (!episodeData.success || episodeData.players.length === 0) {
+            return res.send(`
+                <html>
+                    <body style="background: #0a0a0a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: Arial;">
+                        <div style="text-align: center;">
+                            <h1>Episode Not Found</h1>
+                            <p>Anilist ID: ${anilistId} | Episode: ${episode} | Language: ${language}</p>
+                        </div>
+                    </body>
+                </html>
+            `);
+        }
+
+        // Get the first player URL
+        const playerUrl = episodeData.players[0].url;
+
+        // Send embeddable HTML
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>${episodeData.title}</title>
+                <style>
+                    body { 
+                        margin: 0; 
+                        padding: 0; 
+                        background: #000;
+                        overflow: hidden;
+                    }
+                    .player-container {
+                        width: 100vw;
+                        height: 100vh;
+                    }
+                    iframe {
+                        width: 100%;
+                        height: 100%;
+                        border: none;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="player-container">
+                    <iframe src="${playerUrl}" frameborder="0" scrolling="no" allowfullscreen></iframe>
+                </div>
+                <script>
+                    // Auto-resize iframe content
+                    function resizeIframe() {
+                        const iframe = document.querySelector('iframe');
+                        iframe.style.height = window.innerHeight + 'px';
+                        iframe.style.width = window.innerWidth + 'px';
+                    }
+                    window.addEventListener('resize', resizeIframe);
+                    resizeIframe();
+                </script>
+            </body>
+            </html>
+        `);
+
     } catch (error) {
-        res.status(500).json({ error: 'Search failed', message: error.message });
+        res.send(`
+            <html>
+                <body style="background: #0a0a0a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: Arial;">
+                    <div style="text-align: center;">
+                        <h1>Error Loading Anime</h1>
+                        <p>Please check the Anilist ID and try again</p>
+                    </div>
+                </body>
+            </html>
+        `);
     }
 });
 
-// Serve pages
+// ========== DOCUMENTATION PAGE ==========
+app.get('/docs', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'docs.html'));
+});
+
+// ========== HOME PAGE ==========
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/search', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
 
 // Health check
 app.get('/health', (req, res) => {
     res.json({ 
         status: 'OK',
-        total_anime: Object.keys(ANIME_MAPPINGS).length,
-        timestamp: new Date().toISOString()
+        message: 'Anime API Server is running',
+        endpoints: {
+            api: '/api/anime/:id/:season/:episode',
+            embed: '/anime/:id/:episode/:language',
+            docs: '/docs'
+        }
     });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Anime API running on port ${PORT}`);
-    console.log(`📺 ${Object.keys(ANIME_MAPPINGS).length} anime loaded!`);
-    console.log('🌐 Open http://localhost:3000');
+    console.log(`🚀 Anime API Server running on port ${PORT}`);
+    console.log('📖 Documentation: http://localhost:3000/docs');
+    console.log('🎌 Embed Example: http://localhost:3000/anime/21/1/sub');
 });
 
 module.exports = app;
