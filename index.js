@@ -28,6 +28,12 @@ const SOURCES = {
         baseUrl: 'https://animeworld-india.me',
         searchUrl: 'https://animeworld-india.me/?s=',
         episodeUrl: 'https://animeworld-india.me/episode'
+    },
+    TOONSTREAM: {
+        name: 'ToonStream',
+        baseUrl: 'https://toonstream.love',
+        searchUrl: 'https://toonstream.love/search/',
+        episodeUrl: 'https://toonstream.love/episode'
     }
 };
 
@@ -55,16 +61,44 @@ const ANIME_MAPPINGS = {
     '456': 'fullmetal-alchemist-brotherhood'
 };
 
+// ========== ANILIST TITLE FETCHER ==========
+async function getAnimeTitle(anilistId) {
+    try {
+        const query = `
+            query ($id: Int) {
+                Media (id: $id, type: ANIME) {
+                    title {
+                        english
+                        romaji
+                    }
+                }
+            }
+        `;
+        const variables = { id: parseInt(anilistId) };
+        const response = await axios.post('https://graphql.anilist.co', { query, variables });
+        const title = response.data.data.Media.title;
+        return title.english || title.romaji;
+    } catch (error) {
+        console.error('Anilist API error:', error);
+        return null;
+    }
+}
+
 // ========== ANIME SLUG RESOLVER ==========
-async function getAnimeSlug(anilistId) {
-    // If we have a mapping, use it
+async function getAnimeSlug(anilistId, source) {
+    // If we have a mapping, use it (assume universal)
     if (ANIME_MAPPINGS[anilistId]) {
         return ANIME_MAPPINGS[anilistId];
     }
     
-    // Otherwise, try to search for the anime by name
+    // Fetch title from Anilist and search
+    const title = await getAnimeTitle(anilistId);
+    if (!title) {
+        return null;
+    }
+    
     try {
-        const searchResults = await searchAnime(anilistId, 'ANIMEWORLD');
+        const searchResults = await searchAnime(title, source);
         if (searchResults.length > 0) {
             return searchResults[0].slug;
         }
@@ -72,8 +106,7 @@ async function getAnimeSlug(anilistId) {
         console.error('Error searching for anime:', error);
     }
     
-    // Fallback
-    return `anime-${anilistId}`;
+    return null;
 }
 
 // ========== ANIME SEARCH FUNCTION ==========
@@ -99,8 +132,8 @@ async function searchAnime(query, source = 'ANIMEWORLD') {
             const image = $(el).find('img').attr('src');
             const description = $(el).find('p').text().trim();
             
-            if (title && url && url.includes('/anime/')) {
-                const slugMatch = url.match(/\/anime\/([^\/]+)\//);
+            if (title && url && url.includes('/anime/') || url.includes('/series/')) {
+                const slugMatch = url.match(/\/(?:anime|series)\/([^\/]+)\//);
                 if (slugMatch && slugMatch[1]) {
                     results.push({
                         title: title,
@@ -194,7 +227,9 @@ function extractVideoPlayers(html, source) {
     });
 
     console.log(`🎯 Found ${players.length} players from ${source}`);
-    return players;
+    
+    // Only return the first player as per instructions
+    return players.length > 0 ? [players[0]] : [];
 }
 
 // ========== EPISODE FETCHER ==========
@@ -246,27 +281,66 @@ async function getEpisodeData(animeSlug, season, episode, source = 'ANIMEWORLD')
 }
 
 // ========== MULTI-SOURCE FETCHER ==========
-async function getEpisodeMultiSource(animeSlug, season, episode) {
-    console.log(`🔍 Multi-source fetch: ${animeSlug}, S${season}, E${episode}`);
+async function getEpisodeMultiSource(anilistId, season, episode) {
+    console.log(`🔍 Multi-source fetch: ID ${anilistId}, S${season}, E${episode}`);
     
-    // Try sources in order
-    const sources = ['ANIMEWORLD', 'BACKUP'];
+    // Try sources in parallel for faster response
+    const sources = ['ANIMEWORLD', 'BACKUP', 'TOONSTREAM'];
     
-    for (const source of sources) {
+    const promises = sources.map(async (source) => {
         try {
-            const result = await getEpisodeData(animeSlug, season, episode, source);
-            
-            if (result.success && result.players.length > 0) {
-                console.log(`✅ Success with ${source}`);
-                return result;
+            const slug = await getAnimeSlug(anilistId, source);
+            if (!slug) {
+                return { success: false, source };
             }
+            return await getEpisodeData(slug, season, episode, source);
         } catch (error) {
-            console.log(`❌ ${source} failed:`, error.message);
-            continue;
+            return { success: false, source };
+        }
+    });
+
+    const results = await Promise.allSettled(promises);
+
+    for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.success && result.value.players.length > 0) {
+            console.log(`✅ Success with ${result.value.source}`);
+            return result.value;
         }
     }
     
     return { success: false, players: [], source: 'ALL' };
+}
+
+// ========== ANILIST SEARCH FUNCTION ==========
+async function searchAnilistAnime(query) {
+    try {
+        const graphqlQuery = `
+            query ($search: String) {
+                Page (perPage: 10) {
+                    media(search: $search, type: ANIME) {
+                        id
+                        title {
+                            english
+                            romaji
+                        }
+                        coverImage {
+                            medium
+                        }
+                    }
+                }
+            }
+        `;
+        const variables = { search: query };
+        const response = await axios.post('https://graphql.anilist.co', { query: graphqlQuery, variables });
+        return response.data.data.Page.media.map(m => ({
+            id: m.id,
+            title: m.title.english || m.title.romaji,
+            image: m.coverImage.medium
+        }));
+    } catch (error) {
+        console.error('Anilist search error:', error);
+        return [];
+    }
 }
 
 // ========== API ENDPOINTS ==========
@@ -278,21 +352,19 @@ app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
     console.log(`🎌 Fetching: ${anilistId}, S${season}, E${episode}`);
 
     try {
-        const animeSlug = await getAnimeSlug(anilistId);
-        const episodeData = await getEpisodeMultiSource(animeSlug, parseInt(season), parseInt(episode));
+        const episodeData = await getEpisodeMultiSource(anilistId, parseInt(season), parseInt(episode));
 
         if (!episodeData.success) {
             return res.status(404).json({ 
                 error: 'Episode not found on any source',
-                tried_sources: ['AnimeWorld', 'Backup'],
-                anime_slug: animeSlug
+                tried_sources: ['AnimeWorld', 'Backup', 'ToonStream'],
+                anilist_id: anilistId
             });
         }
 
         res.json({
             success: true,
             anilist_id: anilistId,
-            anime_slug: animeSlug,
             season: parseInt(season),
             episode: parseInt(episode),
             title: episodeData.title,
@@ -311,18 +383,19 @@ app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
     }
 });
 
-// Search endpoint
+// Search endpoint for sources
 app.get('/api/search/:query', async (req, res) => {
     const { query } = req.params;
     
     try {
         // Search all sources
-        const [animeworldResults, backupResults] = await Promise.all([
+        const [animeworldResults, backupResults, toonstreamResults] = await Promise.all([
             searchAnime(query, 'ANIMEWORLD'),
-            searchAnime(query, 'BACKUP')
+            searchAnime(query, 'BACKUP'),
+            searchAnime(query, 'TOONSTREAM')
         ]);
 
-        const allResults = [...animeworldResults, ...backupResults];
+        const allResults = [...animeworldResults, ...backupResults, ...toonstreamResults];
         
         res.json({
             success: true,
@@ -335,14 +408,29 @@ app.get('/api/search/:query', async (req, res) => {
     }
 });
 
+// Anilist search endpoint
+app.get('/api/anilist-search/:query', async (req, res) => {
+    const { query } = req.params;
+    
+    try {
+        const results = await searchAnilistAnime(query);
+        res.json({
+            success: true,
+            query: query,
+            results: results
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Anilist search failed', message: error.message });
+    }
+});
+
 // Embed endpoint
 app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
     const { anilistId, episode, language = 'sub' } = req.params;
     const season = 1;
 
     try {
-        const animeSlug = await getAnimeSlug(anilistId);
-        const episodeData = await getEpisodeMultiSource(animeSlug, season, parseInt(episode));
+        const episodeData = await getEpisodeMultiSource(anilistId, season, parseInt(episode));
 
         if (!episodeData.success || episodeData.players.length === 0) {
             return res.send(`
@@ -351,8 +439,7 @@ app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
                         <div style="text-align: center;">
                             <h1>Episode Not Found</h1>
                             <p>Anime ID: ${anilistId} | Episode: ${episode} | Language: ${language}</p>
-                            <p>Anime Slug: ${animeSlug}</p>
-                            <p>Tried: AnimeWorld, Backup Source</p>
+                            <p>Tried: AnimeWorld, Backup Source, ToonStream</p>
                         </div>
                     </body>
                 </html>
@@ -418,7 +505,7 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 AnimeWorld API running on port ${PORT}`);
-    console.log('🌐 Sources: AnimeWorld, Backup');
+    console.log('🌐 Sources: AnimeWorld, Backup, ToonStream');
     console.log('📖 Docs: http://localhost:3000/docs');
 });
 
