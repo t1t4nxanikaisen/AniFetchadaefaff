@@ -12,6 +12,21 @@ app.use((req, res, next) => {
     next();
 });
 
+// Serve index.html for root route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Your API routes
+app.get('/api/anime/:anilistId/:season/:episodeNum', async (req, res) => {
+    // ... your existing API code
+});
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'OK', message: 'Server is running' });
+});
+
 // -------- AGGRESSIVE ANILIST TO SLUG MAPPING --------
 const ANILIST_TO_SLUG = {
     // Popular Anime - Verified Slugs
