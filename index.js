@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
@@ -14,6 +15,13 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static('public'));
+
+// ========== CACHE CONFIG ==========
+const CACHE_FILE = 'slug_cache.json';
+let slugCache = {};
+if (fs.existsSync(CACHE_FILE)) {
+    slugCache = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+}
 
 // ========== SOURCE CONFIGURATION ==========
 const SOURCES = {
@@ -86,9 +94,16 @@ async function getAnimeTitle(anilistId) {
 
 // ========== ANIME SLUG RESOLVER ==========
 async function getAnimeSlug(anilistId, source) {
-    // If we have a mapping, use it (assume universal)
+    const key = `${anilistId}_${source}`;
+    if (slugCache[key]) {
+        return slugCache[key];
+    }
+    
+    // If we have a mapping, use it
     if (ANIME_MAPPINGS[anilistId]) {
-        return ANIME_MAPPINGS[anilistId];
+        slugCache[key] = ANIME_MAPPINGS[anilistId];
+        fs.writeFileSync(CACHE_FILE, JSON.stringify(slugCache));
+        return slugCache[key];
     }
     
     // Fetch title from Anilist and search
@@ -100,7 +115,9 @@ async function getAnimeSlug(anilistId, source) {
     try {
         const searchResults = await searchAnime(title, source);
         if (searchResults.length > 0) {
-            return searchResults[0].slug;
+            slugCache[key] = searchResults[0].slug;
+            fs.writeFileSync(CACHE_FILE, JSON.stringify(slugCache));
+            return slugCache[key];
         }
     } catch (error) {
         console.error('Error searching for anime:', error);
@@ -126,24 +143,27 @@ async function searchAnime(query, source = 'ANIMEWORLD') {
         const $ = cheerio.load(response.data);
         const results = [];
 
-        $('article').each((i, el) => {
-            const title = $(el).find('h2 a').text().trim();
-            const url = $(el).find('h2 a').attr('href');
-            const image = $(el).find('img').attr('src');
-            const description = $(el).find('p').text().trim();
-            
-            if (title && url && url.includes('/anime/') || url.includes('/series/')) {
-                const slugMatch = url.match(/\/(?:anime|series)\/([^\/]+)\//);
-                if (slugMatch && slugMatch[1]) {
-                    results.push({
-                        title: title,
-                        slug: slugMatch[1],
-                        url: url,
-                        image: image,
-                        description: description,
-                        source: source
-                    });
-                }
+        // More general selector
+        $('a[href*="/series/"], a[href*="/anime/"]').each((i, el) => {
+            const a = $(el);
+            const url = a.attr('href');
+            if (!url) return;
+
+            const title = a.text().trim() || a.attr('title') || '';
+            const parent = a.closest('div, article, li, section');
+            const image = parent.find('img').attr('src') || '';
+            const description = parent.find('p, .description').text().trim() || '';
+
+            const slugMatch = url.match(/\/(?:anime|series)\/([^\/]+)\//);
+            if (slugMatch && slugMatch[1] && title.toLowerCase().includes(query.toLowerCase())) {
+                results.push({
+                    title: title,
+                    slug: slugMatch[1],
+                    url: url,
+                    image: image,
+                    description: description,
+                    source: source
+                });
             }
         });
 
@@ -263,9 +283,9 @@ async function getEpisodeData(animeSlug, season, episode, source = 'ANIMEWORLD')
                     return {
                         success: true,
                         url: url,
-                        title: $('h1.entry-title').text().trim() || `Episode ${episode}`,
-                        description: $('div.entry-content p').first().text().trim() || '',
-                        thumbnail: $('.post-thumbnail img').attr('src') || '',
+                        title: $('h1.entry-title, h1, h2').text().trim() || `Episode ${episode}`,
+                        description: $('div.entry-content p, .description').first().text().trim() || '',
+                        thumbnail: $('.post-thumbnail img, img').attr('src') || '',
                         players: players,
                         source: source
                     };
@@ -284,7 +304,6 @@ async function getEpisodeData(animeSlug, season, episode, source = 'ANIMEWORLD')
 async function getEpisodeMultiSource(anilistId, season, episode) {
     console.log(`🔍 Multi-source fetch: ID ${anilistId}, S${season}, E${episode}`);
     
-    // Try sources in parallel for faster response
     const sources = ['ANIMEWORLD', 'BACKUP', 'TOONSTREAM'];
     
     const promises = sources.map(async (source) => {
