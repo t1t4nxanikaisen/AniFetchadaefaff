@@ -12,7 +12,10 @@ app.use((req, res, next) => {
     next();
 });
 
-// Serve index.html for root route
+// Serve static files from root directory
+app.use(express.static(__dirname));
+
+// Root route - serve index.html
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
