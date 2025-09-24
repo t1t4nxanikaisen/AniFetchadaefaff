@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const path = require('path'); // ← ADD THIS LINE
 
 const app = express();
 
@@ -18,16 +19,6 @@ app.use(express.static(__dirname));
 // Root route - serve index.html
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Your API routes
-app.get('/api/anime/:anilistId/:season/:episodeNum', async (req, res) => {
-    // ... your existing API code
-});
-
-// Health check
-app.get('/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Server is running' });
 });
 
 // -------- AGGRESSIVE ANILIST TO SLUG MAPPING --------
@@ -80,11 +71,10 @@ const ANILIST_TO_SLUG = {
     '99147': 'black-clover',
     
     // JJK Seasons - CORRECT MAPPING
-    '113415': 'jujutsu-kaisen', // Season 1
-    '41353': 'jujutsu-kaisen',  // Season 2 - SAME SLUG!
-    '49761': 'jujutsu-kaisen',  // Season 2 - SAME SLUG!
+    '41353': 'jujutsu-kaisen',  // Season 2
+    '49761': 'jujutsu-kaisen',  // Season 2
     
-    // Add 700+ more with SIMPLE SLUGS
+    // Additional anime
     '11757': 'sword-art-online-2',
     '20047': 'no-game-no-life',
     '2167': 'clannad',
@@ -152,8 +142,6 @@ const ANILIST_TO_SLUG = {
     '106051': 'bleach',
     '107428': 'my-hero-academia',
     '108805': 'tokyo-revengers',
-    
-    // ... Add 600+ more following the same pattern
 };
 
 // -------- ULTRA-AGGRESSIVE CONFIG --------
@@ -490,11 +478,21 @@ app.get('/health', (req, res) => {
     });
 });
 
-// -------- START SERVER --------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 ULTRA Anime Scraper running on port ${PORT}`);
-    console.log(`📊 Total anime: ${Object.keys(ANILIST_TO_SLUG).length}`);
-    console.log(`🔗 Test JJK Season 2: http://localhost:${PORT}/api/anime/41353/1/1`);
-    console.log(`🔗 Test One Piece: http://localhost:${PORT}/api/anime/21/1/1`);
+// -------- CATCH ALL ROUTE FOR VERCEL --------
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+// For Vercel serverless
+module.exports = app;
+
+// For local development
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`🚀 ULTRA Anime Scraper running on port ${PORT}`);
+        console.log(`📊 Total anime: ${Object.keys(ANILIST_TO_SLUG).length}`);
+        console.log(`🌐 Main site: http://localhost:${PORT}/`);
+        console.log(`🔗 Test API: http://localhost:${PORT}/api/anime/21/1/1`);
+    });
+}
