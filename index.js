@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anime Watch - Player Preview</title>
+    <title>Direct Anime Scraper - Player Preview</title>
     <style>
         * {
             margin: 0;
@@ -254,13 +254,22 @@
                 margin: 10px 0;
             }
         }
+        
+        .error-message {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 8px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Anime Watch - Player Preview</h1>
-            <p class="subtitle">Browse and preview 2000+ anime series with direct player integration</p>
+            <h1>Direct Anime Scraper - Player Preview</h1>
+            <p class="subtitle">Direct scraping from AnimeWorld with real player URLs</p>
             
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="Search for anime...">
@@ -269,7 +278,7 @@
         
         <div class="main-content">
             <div class="anime-list">
-                <h2>Anime Series</h2>
+                <h2>Popular Anime</h2>
                 <div id="animeList">
                     <!-- Anime list will be populated by JavaScript -->
                 </div>
@@ -278,7 +287,7 @@
             <div class="player-container">
                 <div class="player-header">
                     <h2 id="animeTitle">Select an anime to start watching</h2>
-                    <p id="animeInfo">Choose from the list on the left to load the player</p>
+                    <p id="animeInfo">Choose from the list to load the player</p>
                 </div>
                 
                 <div class="iframe-container">
@@ -291,12 +300,14 @@
                     <div class="episode-info" id="episodeInfo">Episode: -</div>
                     <button class="episode-btn" id="nextEpisode" disabled>Next</button>
                 </div>
+                
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
             </div>
         </div>
         
         <div class="stats">
             <div class="stat-item">
-                <div class="stat-number" id="totalAnime">2000+</div>
+                <div class="stat-number" id="totalAnime">50+</div>
                 <div class="stat-label">Anime Series</div>
             </div>
             <div class="stat-item">
@@ -304,138 +315,70 @@
                 <div class="stat-label">Active Players</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">24/7</div>
-                <div class="stat-label">Available</div>
+                <div class="stat-number">Direct</div>
+                <div class="stat-label">Scraping</div>
             </div>
         </div>
         
         <footer>
-            <p>Anime Watch Player Preview | All anime content is provided for preview purposes</p>
+            <p>Direct Anime Scraper | Real-time player extraction from AnimeWorld</p>
         </footer>
     </div>
 
     <script>
-        // Comprehensive anime database with AniList IDs
+        // Real anime database with correct slugs for AnimeWorld
         const animeDatabase = [
-            { id: 1, anilistId: 21, title: "One Piece", slug: "one-piece", episodes: 1100, year: 1999, status: "Ongoing" },
-            { id: 2, anilistId: 20, title: "Naruto", slug: "naruto", episodes: 220, year: 2002, status: "Completed" },
-            { id: 3, anilistId: 1735, title: "Naruto: Shippuden", slug: "naruto-shippuden", episodes: 500, year: 2007, status: "Completed" },
-            { id: 4, anilistId: 1535, title: "Death Note", slug: "death-note", episodes: 37, year: 2006, status: "Completed" },
-            { id: 5, anilistId: 16498, title: "Attack on Titan", slug: "attack-on-titan", episodes: 88, year: 2013, status: "Completed" },
-            { id: 6, anilistId: 11061, title: "Hunter x Hunter (2011)", slug: "hunter-x-hunter", episodes: 148, year: 2011, status: "Completed" },
-            { id: 7, anilistId: 23283, title: "Shingeki no Kyojin", slug: "shingeki-no-kyojin", episodes: 75, year: 2013, status: "Completed" },
-            { id: 8, anilistId: 22319, title: "Tokyo Ghoul", slug: "tokyo-ghoul", episodes: 48, year: 2014, status: "Completed" },
-            { id: 9, anilistId: 28121, title: "Dragon Ball Super", slug: "dragon-ball-super", episodes: 131, year: 2015, status: "Completed" },
-            { id: 10, anilistId: 99147, title: "Black Clover", slug: "black-clover", episodes: 170, year: 2017, status: "Completed" },
-            { id: 11, anilistId: 38000, title: "Kimetsu no Yaiba", slug: "demon-slayer", episodes: 55, year: 2019, status: "Ongoing" },
-            { id: 12, anilistId: 113415, title: "Jujutsu Kaisen", slug: "jujutsu-kaisen", episodes: 47, year: 2020, status: "Ongoing" },
-            { id: 13, anilistId: 117448, title: "Mushoku Tensei", slug: "mushoku-tensei", episodes: 36, year: 2021, status: "Ongoing" },
-            { id: 14, anilistId: 131586, title: "Chainsaw Man", slug: "chainsaw-man", episodes: 12, year: 2022, status: "Ongoing" },
-            { id: 15, anilistId: 140960, title: "Solo Leveling", slug: "solo-leveling", episodes: 12, year: 2024, status: "Ongoing" },
-            { id: 16, anilistId: 101922, title: "Kaguya-sama: Love is War", slug: "kaguya-sama", episodes: 37, year: 2019, status: "Completed" },
-            { id: 17, anilistId: 104578, title: "Vinland Saga", slug: "vinland-saga", episodes: 48, year: 2019, status: "Ongoing" },
-            { id: 18, anilistId: 107660, title: "The Rising of the Shield Hero", slug: "shield-hero", episodes: 38, year: 2019, status: "Ongoing" },
-            { id: 19, anilistId: 108632, title: "Dr. Stone", slug: "dr-stone", episodes: 47, year: 2019, status: "Ongoing" },
-            { id: 20, anilistId: 101759, title: "My Hero Academia", slug: "my-hero-academia", episodes: 138, year: 2016, status: "Ongoing" },
-            { id: 21, anilistId: 9253, title: "Steins;Gate", slug: "steins-gate", episodes: 24, year: 2011, status: "Completed" },
-            { id: 22, anilistId: 15315, title: "Kill la Kill", slug: "kill-la-kill", episodes: 24, year: 2013, status: "Completed" },
-            { id: 23, anilistId: 20047, title: "No Game No Life", slug: "no-game-no-life", episodes: 12, year: 2014, status: "Completed" },
-            { id: 24, anilistId: 20555, title: "Akame ga Kill!", slug: "akame-ga-kill", episodes: 24, year: 2014, status: "Completed" },
-            { id: 25, anilistId: 20787, title: "Sword Art Online", slug: "sword-art-online", episodes: 96, year: 2012, status: "Ongoing" },
-            { id: 26, anilistId: 2167, title: "Clannad", slug: "clannad", episodes: 44, year: 2007, status: "Completed" },
-            { id: 27, anilistId: 6547, title: "Angel Beats!", slug: "angel-beats", episodes: 13, year: 2010, status: "Completed" },
-            { id: 28, anilistId: 12189, title: "Psycho-Pass", slug: "psycho-pass", episodes: 41, year: 2012, status: "Completed" },
-            { id: 29, anilistId: 14719, title: "JoJo's Bizarre Adventure", slug: "jojo-bizarre-adventure", episodes: 190, year: 2012, status: "Ongoing" },
-            { id: 30, anilistId: 17265, title: "Log Horizon", slug: "log-horizon", episodes: 50, year: 2013, status: "Completed" },
-            { id: 31, anilistId: 18153, title: "Kuroko's Basketball", slug: "kuroko-basketball", episodes: 75, year: 2012, status: "Completed" },
-            { id: 32, anilistId: 18671, title: "Haikyu!!", slug: "haikyu", episodes: 85, year: 2014, status: "Completed" },
-            { id: 33, anilistId: 19815, title: "Noragami", slug: "noragami", episodes: 25, year: 2014, status: "Completed" },
-            { id: 34, anilistId: 20853, title: "Parasyte", slug: "parasyte", episodes: 24, year: 2014, status: "Completed" },
-            { id: 35, anilistId: 21273, title: "Tokyo ESP", slug: "tokyo-esp", episodes: 12, year: 2014, status: "Completed" },
-            { id: 36, anilistId: 21995, title: "Assassination Classroom", slug: "assassination-classroom", episodes: 47, year: 2015, status: "Completed" },
-            { id: 37, anilistId: 22199, title: "One-Punch Man", slug: "one-punch-man", episodes: 24, year: 2015, status: "Ongoing" },
-            { id: 38, anilistId: 23289, title: "Overlord", slug: "overlord", episodes: 52, year: 2015, status: "Ongoing" },
-            { id: 39, anilistId: 23755, title: "Mob Psycho 100", slug: "mob-psycho-100", episodes: 37, year: 2016, status: "Completed" },
-            { id: 40, anilistId: 24701, title: "Re:Zero", slug: "re-zero", episodes: 50, year: 2016, status: "Ongoing" },
-            { id: 41, anilistId: 24833, title: "Boku no Hero Academia", slug: "boku-no-hero-academia", episodes: 113, year: 2016, status: "Ongoing" },
-            { id: 42, anilistId: 25519, title: "KonoSuba", slug: "konosuba", episodes: 20, year: 2016, status: "Completed" },
-            { id: 43, anilistId: 269, title: "Bleach", slug: "bleach", episodes: 366, year: 2004, status: "Ongoing" },
-            { id: 44, anilistId: 44, title: "Fullmetal Alchemist: Brotherhood", slug: "fullmetal-alchemist-brotherhood", episodes: 64, year: 2009, status: "Completed" },
-            { id: 45, anilistId: 456, title: "Fate/Zero", slug: "fate-zero", episodes: 25, year: 2011, status: "Completed" },
-            { id: 46, anilistId: 6702, title: "Fairy Tail", slug: "fairy-tail", episodes: 328, year: 2009, status: "Completed" },
-            { id: 47, anilistId: 9919, title: "Blue Exorcist", slug: "blue-exorcist", episodes: 37, year: 2011, status: "Completed" },
-            { id: 48, anilistId: 10087, title: "Deadman Wonderland", slug: "deadman-wonderland", episodes: 12, year: 2011, status: "Completed" },
-            { id: 49, anilistId: 11757, title: "Sword Art Online II", slug: "sword-art-online-ii", episodes: 24, year: 2014, status: "Completed" },
-            { id: 50, anilistId: 178025, title: "Gachiakuta", slug: "gachiakuta", episodes: 12, year: 2024, status: "Ongoing" },
-            { id: 51, anilistId: 185660, title: "Wind Breaker", slug: "wind-breaker", episodes: 13, year: 2024, status: "Ongoing" },
-            { id: 52, anilistId: 145064, title: "Frieren: Beyond Journey's End", slug: "frieren", episodes: 28, year: 2023, status: "Completed" },
-            { id: 53, anilistId: 147806, title: "The Apothecary Diaries", slug: "apothecary-diaries", episodes: 24, year: 2023, status: "Completed" },
-            { id: 54, anilistId: 150672, title: "Sousou no Frieren", slug: "sousou-no-frieren", episodes: 28, year: 2023, status: "Completed" },
-            { id: 55, anilistId: 153518, title: "The Dangers in My Heart", slug: "dangers-in-my-heart", episodes: 24, year: 2023, status: "Completed" },
-            { id: 56, anilistId: 156891, title: "The 100 Girlfriends Who Really, Really, Really, Really, Really Love You", slug: "100-girlfriends", episodes: 12, year: 2023, status: "Completed" },
-            { id: 57, anilistId: 159099, title: "Shangri-La Frontier", slug: "shangri-la-frontier", episodes: 25, year: 2023, status: "Ongoing" },
-            { id: 58, anilistId: 163632, title: "The Unwanted Undead Adventurer", slug: "unwanted-undead-adventurer", episodes: 12, year: 2024, status: "Ongoing" },
-            { id: 59, anilistId: 165813, title: "Solo Leveling", slug: "solo-leveling", episodes: 12, year: 2024, status: "Completed" },
-            { id: 60, anilistId: 168004, title: "The Wrong Way to Use Healing Magic", slug: "wrong-way-healing-magic", episodes: 12, year: 2024, status: "Ongoing" },
-            { id: 61, anilistId: 170074, title: "Chained Soldier", slug: "chained-soldier", episodes: 12, year: 2024, status: "Completed" },
-            { id: 62, anilistId: 172528, title: "Metallic Rouge", slug: "metallic-rouge", episodes: 13, year: 2024, status: "Completed" },
-            { id: 63, anilistId: 175014, title: "Oshi no Ko", slug: "oshi-no-ko", episodes: 11, year: 2023, status: "Ongoing" },
-            { id: 64, anilistId: 177784, title: "Mushoku Tensei II", slug: "mushoku-tensei-ii", episodes: 25, year: 2023, status: "Completed" },
-            { id: 65, anilistId: 180173, title: "Jujutsu Kaisen 2nd Season", slug: "jujutsu-kaisen-2", episodes: 23, year: 2023, status: "Completed" },
-            { id: 66, anilistId: 183545, title: "Bleach: Thousand-Year Blood War", slug: "bleach-tybw", episodes: 26, year: 2022, status: "Ongoing" },
-            { id: 67, anilistId: 186417, title: "Spy x Family", slug: "spy-x-family", episodes: 37, year: 2022, status: "Ongoing" },
-            { id: 68, anilistId: 189291, title: "Chainsaw Man Part 2", slug: "chainsaw-man-2", episodes: 12, year: 2023, status: "Ongoing" },
-            { id: 69, anilistId: 192392, title: "Demon Slayer: Hashira Training Arc", slug: "demon-slayer-hashira", episodes: 8, year: 2024, status: "Completed" },
-            { id: 70, anilistId: 195374, title: "Blue Lock", slug: "blue-lock", episodes: 24, year: 2022, status: "Completed" },
-            { id: 71, anilistId: 198291, title: "Bocchi the Rock!", slug: "bocchi-the-rock", episodes: 12, year: 2022, status: "Completed" },
-            { id: 72, anilistId: 201329, title: "Cyberpunk: Edgerunners", slug: "cyberpunk-edgerunners", episodes: 10, year: 2022, status: "Completed" },
-            { id: 73, anilistId: 204427, title: "Lycoris Recoil", slug: "lycoris-recoil", episodes: 13, year: 2022, status: "Completed" },
-            { id: 74, anilistId: 207496, title: "Made in Abyss: The Golden City of the Scorching Sun", slug: "made-in-abyss-2", episodes: 12, year: 2022, status: "Completed" },
-            { id: 75, anilistId: 210579, title: "Call of the Night", slug: "call-of-the-night", episodes: 13, year: 2022, status: "Completed" },
-            { id: 76, anilistId: 213642, title: "Ao Ashi", slug: "ao-ashi", episodes: 24, year: 2022, status: "Completed" },
-            { id: 77, anilistId: 216719, title: "Summer Time Rendering", slug: "summer-time-rendering", episodes: 25, year: 2022, status: "Completed" },
-            { id: 78, anilistId: 219783, title: "Kaguya-sama: Love Is War - Ultra Romantic", slug: "kaguya-sama-3", episodes: 13, year: 2022, status: "Completed" },
-            { id: 79, anilistId: 222834, title: "Ya Boy Kongming!", slug: "ya-boy-kongming", episodes: 12, year: 2022, status: "Completed" },
-            { id: 80, anilistId: 225837, title: "Birdie Wing: Golf Girls' Story", slug: "birdie-wing", episodes: 25, year: 2022, status: "Completed" },
-            { id: 81, anilistId: 228846, title: "Shadows House 2nd Season", slug: "shadows-house-2", episodes: 12, year: 2022, status: "Completed" },
-            { id: 82, anilistId: 231891, title: "The Executioner and Her Way of Life", slug: "executioner-way-of-life", episodes: 12, year: 2022, status: "Completed" },
-            { id: 83, anilistId: 234957, title: "Love Live! Superstar!! 2nd Season", slug: "love-live-superstar-2", episodes: 12, year: 2022, status: "Completed" },
-            { id: 84, anilistId: 237984, title: "The Demon Girl Next Door Season 2", slug: "demon-girl-next-door-2", episodes: 12, year: 2022, status: "Completed" },
-            { id: 85, anilistId: 240976, title: "The Greatest Demon Lord Is Reborn as a Typical Nobody", slug: "greatest-demon-lord-reborn", episodes: 12, year: 2022, status: "Completed" },
-            { id: 86, anilistId: 243987, title: "Aharen-san wa Hakarenai", slug: "aharen-san", episodes: 12, year: 2022, status: "Completed" },
-            { id: 87, anilistId: 246982, title: "Love After World Domination", slug: "love-after-world-domination", episodes: 12, year: 2022, status: "Completed" },
-            { id: 88, anilistId: 249983, title: "The Dawn of the Witch", slug: "dawn-of-the-witch", episodes: 12, year: 2022, status: "Completed" },
-            { id: 89, anilistId: 252976, title: "Heroines Run the Show", slug: "heroines-run-the-show", episodes: 12, year: 2022, status: "Completed" },
-            { id: 90, anilistId: 255984, title: "RPG Real Estate", slug: "rpg-real-estate", episodes: 12, year: 2022, status: "Completed" },
-            { id: 91, anilistId: 258987, title: "Shikimori's Not Just a Cutie", slug: "shikimori", episodes: 12, year: 2022, status: "Completed" },
-            { id: 92, anilistId: 261984, title: "The Girl from the Other Side: Siúil, a Rún", slug: "girl-from-other-side", episodes: 1, year: 2022, status: "Completed" },
-            { id: 93, anilistId: 264987, title: "Komi Can't Communicate Season 2", slug: "komi-cant-communicate-2", episodes: 12, year: 2022, status: "Completed" },
-            { id: 94, anilistId: 267984, title: "The Rising of the Shield Hero Season 2", slug: "shield-hero-2", episodes: 13, year: 2022, status: "Completed" },
-            { id: 95, anilistId: 270987, title: "Spy x Family Part 2", slug: "spy-x-family-2", episodes: 13, year: 2022, status: "Completed" },
-            { id: 96, anilistId: 273984, title: "To Your Eternity Season 2", slug: "to-your-eternity-2", episodes: 12, year: 2022, status: "Completed" },
-            { id: 97, anilistId: 276987, title: "Urusei Yatsura (2022)", slug: "urusei-yatsura-2022", episodes: 46, year: 2022, status: "Completed" },
-            { id: 98, anilistId: 279984, title: "Bleach: Thousand-Year Blood War Part 2", slug: "bleach-tybw-2", episodes: 13, year: 2023, status: "Completed" },
-            { id: 99, anilistId: 282987, title: "Vinland Saga Season 2", slug: "vinland-saga-2", episodes: 24, year: 2023, status: "Completed" },
-            { id: 100, anilistId: 285984, title: "Heavenly Delusion", slug: "heavenly-delusion", episodes: 13, year: 2023, status: "Completed" }
+            { anilistId: 21, title: "One Piece", slug: "one-piece", episodes: 1100, year: 1999, status: "Ongoing" },
+            { anilistId: 20, title: "Naruto", slug: "naruto", episodes: 220, year: 2002, status: "Completed" },
+            { anilistId: 1735, title: "Naruto: Shippuden", slug: "naruto-shippuden", episodes: 500, year: 2007, status: "Completed" },
+            { anilistId: 1535, title: "Death Note", slug: "death-note", episodes: 37, year: 2006, status: "Completed" },
+            { anilistId: 16498, title: "Attack on Titan", slug: "shingeki-no-kyojin", episodes: 88, year: 2013, status: "Completed" },
+            { anilistId: 11061, title: "Hunter x Hunter (2011)", slug: "hunter-x-hunter-2011", episodes: 148, year: 2011, status: "Completed" },
+            { anilistId: 38000, title: "Demon Slayer", slug: "kimetsu-no-yaiba", episodes: 55, year: 2019, status: "Ongoing" },
+            { anilistId: 113415, title: "Jujutsu Kaisen", slug: "jujutsu-kaisen", episodes: 47, year: 2020, status: "Ongoing" },
+            { anilistId: 117448, title: "Mushoku Tensei", slug: "mushoku-tensei-jobless-reincarnation", episodes: 36, year: 2021, status: "Ongoing" },
+            { anilistId: 131586, title: "Chainsaw Man", slug: "chainsaw-man", episodes: 12, year: 2022, status: "Ongoing" },
+            { anilistId: 140960, title: "Solo Leveling", slug: "solo-leveling", episodes: 12, year: 2024, status: "Ongoing" },
+            { anilistId: 101922, title: "Kaguya-sama: Love is War", slug: "kaguya-sama-wa-kokurasetai", episodes: 37, year: 2019, status: "Completed" },
+            { anilistId: 104578, title: "Vinland Saga", slug: "vinland-saga", episodes: 48, year: 2019, status: "Ongoing" },
+            { anilistId: 107660, title: "The Rising of the Shield Hero", slug: "tate-no-yuusha-no-nariagari", episodes: 38, year: 2019, status: "Ongoing" },
+            { anilistId: 101759, title: "My Hero Academia", slug: "boku-no-hero-academia", episodes: 138, year: 2016, status: "Ongoing" },
+            { anilistId: 9253, title: "Steins;Gate", slug: "steinsgate", episodes: 24, year: 2011, status: "Completed" },
+            { anilistId: 20555, title: "Akame ga Kill!", slug: "akame-ga-kill", episodes: 24, year: 2014, status: "Completed" },
+            { anilistId: 20787, title: "Sword Art Online", slug: "sword-art-online", episodes: 96, year: 2012, status: "Ongoing" },
+            { anilistId: 12189, title: "Psycho-Pass", slug: "psycho-pass", episodes: 41, year: 2012, status: "Completed" },
+            { anilistId: 14719, title: "JoJo's Bizarre Adventure", slug: "jojo-no-kimyou-na-bouken", episodes: 190, year: 2012, status: "Ongoing" },
+            { anilistId: 18671, title: "Haikyu!!", slug: "haikyuu", episodes: 85, year: 2014, status: "Completed" },
+            { anilistId: 21995, title: "Assassination Classroom", slug: "ansatsu-kyoushitsu", episodes: 47, year: 2015, status: "Completed" },
+            { anilistId: 22199, title: "One-Punch Man", slug: "one-punch-man", episodes: 24, year: 2015, status: "Ongoing" },
+            { anilistId: 23289, title: "Overlord", slug: "overlord", episodes: 52, year: 2015, status: "Ongoing" },
+            { anilistId: 24701, title: "Re:Zero", slug: "rezero-kara-hajimeru-isekai-seikatsu", episodes: 50, year: 2016, status: "Ongoing" },
+            { anilistId: 269, title: "Bleach", slug: "bleach", episodes: 366, year: 2004, status: "Ongoing" },
+            { anilistId: 44, title: "Fullmetal Alchemist: Brotherhood", slug: "fullmetal-alchemist-brotherhood", episodes: 64, year: 2009, status: "Completed" },
+            { anilistId: 6702, title: "Fairy Tail", slug: "fairy-tail", episodes: 328, year: 2009, status: "Completed" },
+            { anilistId: 178025, title: "Gachiakuta", slug: "gachiakuta", episodes: 12, year: 2024, status: "Ongoing" },
+            { anilistId: 185660, title: "Wind Breaker", slug: "wind-breaker", episodes: 13, year: 2024, status: "Ongoing" },
+            { anilistId: 145064, title: "Frieren: Beyond Journey's End", slug: "sousou-no-frieren", episodes: 28, year: 2023, status: "Completed" },
+            { anilistId: 147806, title: "The Apothecary Diaries", slug: "kusuriya-no-hitorigoto", episodes: 24, year: 2023, status: "Completed" },
+            { anilistId: 153518, title: "The Dangers in My Heart", slug: "bokuyaba", episodes: 24, year: 2023, status: "Completed" },
+            { anilistId: 159099, title: "Shangri-La Frontier", slug: "shangri-la-frontier", episodes: 25, year: 2023, status: "Ongoing" },
+            { anilistId: 165813, title: "Solo Leveling", slug: "solo-leveling", episodes: 12, year: 2024, status: "Completed" },
+            { anilistId: 175014, title: "Oshi no Ko", slug: "oshi-no-ko", episodes: 11, year: 2023, status: "Ongoing" },
+            { anilistId: 183545, title: "Bleach: Thousand-Year Blood War", slug: "bleach-sennen-kessen-hen", episodes: 26, year: 2022, status: "Ongoing" },
+            { anilistId: 186417, title: "Spy x Family", slug: "spy-x-family", episodes: 37, year: 2022, status: "Ongoing" },
+            { anilistId: 192392, title: "Demon Slayer: Hashira Training Arc", slug: "kimetsu-no-yaiba-hashira-geiko-hen", episodes: 8, year: 2024, status: "Completed" },
+            { anilistId: 195374, title: "Blue Lock", slug: "blue-lock", episodes: 24, year: 2022, status: "Completed" },
+            { anilistId: 222834, title: "Ya Boy Kongming!", slug: "paripi-koumei", episodes: 12, year: 2022, status: "Completed" },
+            { anilistId: 23755, title: "Mob Psycho 100", slug: "mob-psycho-100", episodes: 37, year: 2016, status: "Completed" },
+            { anilistId: 25519, title: "KonoSuba", slug: "konosuba", episodes: 20, year: 2016, status: "Completed" },
+            { anilistId: 28121, title: "Dragon Ball Super", slug: "dragon-ball-super", episodes: 131, year: 2015, status: "Completed" },
+            { anilistId: 99147, title: "Black Clover", slug: "black-clover", episodes: 170, year: 2017, status: "Completed" },
+            { anilistId: 11757, title: "Sword Art Online II", slug: "sword-art-online-ii", episodes: 24, year: 2014, status: "Completed" },
+            { anilistId: 20047, title: "No Game No Life", slug: "no-game-no-life", episodes: 12, year: 2014, status: "Completed" },
+            { anilistId: 2167, title: "Clannad", slug: "clannad", episodes: 44, year: 2007, status: "Completed" },
+            { anilistId: 6547, title: "Angel Beats!", slug: "angel-beats", episodes: 13, year: 2010, status: "Completed" },
+            { anilistId: 9919, title: "Blue Exorcist", slug: "ao-no-exorcist", episodes: 37, year: 2011, status: "Completed" }
         ];
-
-        // Add more anime to reach 2000+ (simulated)
-        for (let i = 101; i <= 2000; i++) {
-            const year = 1980 + Math.floor(Math.random() * 44);
-            const episodes = Math.floor(Math.random() * 200) + 1;
-            const statuses = ["Completed", "Ongoing"];
-            const status = statuses[Math.floor(Math.random() * statuses.length)];
-            
-            animeDatabase.push({
-                id: i,
-                anilistId: 300000 + i,
-                title: `Anime Series ${i}`,
-                slug: `anime-series-${i}`,
-                episodes: episodes,
-                year: year,
-                status: status
-            });
-        }
 
         // DOM elements
         const animeListElement = document.getElementById('animeList');
@@ -449,6 +392,7 @@
         const episodeInfo = document.getElementById('episodeInfo');
         const totalAnimeElement = document.getElementById('totalAnime');
         const activePlayersElement = document.getElementById('activePlayers');
+        const errorMessage = document.getElementById('errorMessage');
 
         // Current state
         let currentAnime = null;
@@ -519,34 +463,155 @@
             nextEpisodeBtn.disabled = currentEpisode >= anime.episodes;
             episodeInfo.textContent = `Episode: ${currentEpisode}`;
             
+            // Hide error message
+            errorMessage.style.display = 'none';
+            
             // Load player
             loadPlayer();
         }
 
-        // Load player
-        function loadPlayer() {
+        // Load player using direct scraping approach
+        async function loadPlayer() {
             if (!currentAnime) return;
             
             // Show loading
             loadingMessage.style.display = 'flex';
             playerFrame.style.display = 'none';
+            loadingMessage.textContent = 'Scraping player URL...';
             
-            // Simulate API call to get player URL
-            setTimeout(() => {
-                // In a real implementation, this would fetch from your API
-                const playerUrl = `https://anisnfdf.vercel.app/api/anime/${currentAnime.anilistId}/1/${currentEpisode}`;
+            try {
+                // Use CORS proxy to bypass restrictions
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                const targetUrl = `https://watchanimeworld.in/episode/${currentAnime.slug}-${currentEpisode}/`;
                 
-                // For demo purposes, we'll use a placeholder
-                // In production, you would use the actual player URL from your API
-                playerFrame.src = playerUrl;
+                console.log('Scraping URL:', targetUrl);
                 
-                // Hide loading and show player
-                loadingMessage.style.display = 'none';
-                playerFrame.style.display = 'block';
+                // Try to fetch the page content
+                const response = await fetch(proxyUrl + targetUrl);
                 
-                // Update active players count
-                activePlayersElement.textContent = parseInt(activePlayersElement.textContent) + 1;
-            }, 1000);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const html = await response.text();
+                
+                // Extract player iframe URL from HTML
+                const playerUrl = extractPlayerUrl(html);
+                
+                if (playerUrl) {
+                    playerFrame.src = playerUrl;
+                    loadingMessage.style.display = 'none';
+                    playerFrame.style.display = 'block';
+                    activePlayersElement.textContent = parseInt(activePlayersElement.textContent) + 1;
+                    errorMessage.style.display = 'none';
+                } else {
+                    throw new Error('Player URL not found on the page');
+                }
+                
+            } catch (error) {
+                console.error('Scraping error:', error);
+                loadingMessage.textContent = 'Error loading player';
+                
+                // Show error message
+                errorMessage.innerHTML = `
+                    <strong>Error loading player:</strong> ${error.message}<br>
+                    <small>Trying alternative method...</small>
+                `;
+                errorMessage.style.display = 'block';
+                
+                // Try alternative method - direct embed
+                tryAlternativePlayer();
+            }
+        }
+
+        // Extract player URL from HTML content
+        function extractPlayerUrl(html) {
+            // Create temporary DOM parser
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Look for iframe elements
+            const iframes = doc.querySelectorAll('iframe');
+            for (let iframe of iframes) {
+                const src = iframe.getAttribute('src');
+                if (src && (src.includes('streamtape') || src.includes('dood') || 
+                    src.includes('mixdrop') || src.includes('mp4upload') || 
+                    src.includes('vidstream') || src.includes('embtaku'))) {
+                    return src;
+                }
+            }
+            
+            // Look for video elements
+            const videos = doc.querySelectorAll('video');
+            for (let video of videos) {
+                const src = video.getAttribute('src');
+                if (src && src.startsWith('http')) {
+                    return src;
+                }
+            }
+            
+            // Look for script elements that might contain player URLs
+            const scripts = doc.querySelectorAll('script');
+            for (let script of scripts) {
+                const scriptContent = script.textContent;
+                // Common patterns for player URLs
+                const urlPatterns = [
+                    /(https?:\/\/[^\s"']*\.(mp4|m3u8)[^\s"']*)/gi,
+                    /(https?:\/\/[^\s"']*streamtape[^\s"']*)/gi,
+                    /(https?:\/\/[^\s"']*dood[^\s"']*)/gi,
+                    /file:\s*["']([^"']+)["']/gi,
+                    /src:\s*["']([^"']+)["']/gi
+                ];
+                
+                for (let pattern of urlPatterns) {
+                    const matches = scriptContent.match(pattern);
+                    if (matches) {
+                        for (let match of matches) {
+                            if (match.startsWith('http')) {
+                                return match;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        // Alternative method for loading player
+        function tryAlternativePlayer() {
+            // Use a direct embed approach with common streaming services
+            const alternativeUrls = [
+                `https://watchanimeworld.in/embed/${currentAnime.slug}-episode-${currentEpisode}/`,
+                `https://watchanimeworld.in/stream/${currentAnime.slug}-episode-${currentEpisode}/`,
+                `https://watchanimeworld.in/player/${currentAnime.slug}-episode-${currentEpisode}/`
+            ];
+            
+            // Try each alternative URL
+            let currentAltIndex = 0;
+            const tryNextAlternative = () => {
+                if (currentAltIndex < alternativeUrls.length) {
+                    playerFrame.src = alternativeUrls[currentAltIndex];
+                    playerFrame.onload = () => {
+                        loadingMessage.style.display = 'none';
+                        playerFrame.style.display = 'block';
+                        activePlayersElement.textContent = parseInt(activePlayersElement.textContent) + 1;
+                        errorMessage.style.display = 'none';
+                    };
+                    playerFrame.onerror = () => {
+                        currentAltIndex++;
+                        tryNextAlternative();
+                    };
+                } else {
+                    loadingMessage.textContent = 'All methods failed';
+                    errorMessage.innerHTML = `
+                        <strong>All scraping methods failed</strong><br>
+                        <small>The anime might not be available or the website structure changed.</small>
+                    `;
+                }
+            };
+            
+            tryNextAlternative();
         }
 
         // Navigate to previous episode
