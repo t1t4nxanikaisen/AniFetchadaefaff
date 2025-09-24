@@ -761,4 +761,296 @@ function generateErrorHTML(title, subtitle, message) {
 }
 
 // Search endpoint
-app.get('/api/search/:query', (req,
+app.get('/api/search/:query', (req, res) => {
+    const { query } = req.params;
+    const { limit = 20 } = req.query;
+
+    try {
+        if (!DATABASE_LOADED) {
+            return res.status(503).json({
+                error: 'Database not ready',
+                message: 'Please wait for the database to load'
+            });
+        }
+
+        const results = searchAnime(query, parseInt(limit));
+        
+        res.json({
+            success: true,
+            query: query,
+            results_count: results.length,
+            results: results,
+            database_size: ANIME_DATABASE.size
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Search failed',
+            message: error.message
+        });
+    }
+});
+
+// Browse database endpoint
+app.get('/api/browse/:page?', (req, res) => {
+    const page = parseInt(req.params.page) || 1;
+    const limit = 50;
+    const offset = (page - 1) * limit;
+
+    try {
+        if (!DATABASE_LOADED) {
+            return res.status(503).json({
+                error: 'Database not ready',
+                message: 'Please wait for the database to load'
+            });
+        }
+
+        const allAnime = Array.from(ANIME_DATABASE.values());
+        const paginatedResults = allAnime.slice(offset, offset + limit);
+        const totalPages = Math.ceil(allAnime.length / limit);
+
+        res.json({
+            success: true,
+            page: page,
+            per_page: limit,
+            total_anime: allAnime.length,
+            total_pages: totalPages,
+            results: paginatedResults
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Browse failed',
+            message: error.message
+        });
+    }
+});
+
+// Database stats endpoint
+app.get('/api/stats', (req, res) => {
+    res.json({
+        database_loaded: DATABASE_LOADED,
+        total_anime: ANIME_DATABASE.size,
+        sample_anime: Array.from(ANIME_DATABASE.values()).slice(0, 5),
+        endpoints: [
+            'GET /api/anime/{anilist_id}/{season}/{episode}',
+            'GET /anime/{anilist_id}/{episode} (Direct Embed)',
+            'GET /api/search/{query}',
+            'GET /api/browse/{page}',
+            'GET /api/stats',
+            'POST /api/rebuild-database'
+        ]
+    });
+});
+
+// Force database rebuild endpoint
+app.post('/api/rebuild-database', async (req, res) => {
+    try {
+        DATABASE_LOADED = false;
+        ANIME_DATABASE.clear();
+        
+        res.json({
+            message: 'Database rebuild started',
+            status: 'in_progress'
+        });
+        
+        // Rebuild in background
+        buildAnimeDatabase();
+        
+    } catch (error) {
+        res.status(500).json({
+            error: 'Rebuild failed',
+            message: error.message
+        });
+    }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        message: 'Comprehensive AnimeWorld API',
+        database_loaded: DATABASE_LOADED,
+        total_anime: ANIME_DATABASE.size,
+        features: [
+            'Auto-builds database of 2000+ anime from AnimeWorld',
+            'Comprehensive player extraction',
+            'Direct embed support for iframe viewing',
+            'Multiple fallback URLs per episode',
+            'Real-time search and browse',
+            'Automatic error handling and recovery'
+        ],
+        test_urls: [
+            '/api/anime/178025/1/1 (Gachiakuta)',
+            '/api/anime/185660/1/1 (Wind Breaker)',
+            '/anime/21/1 (One Piece Embed)',
+            '/api/search/naruto',
+            '/api/browse/1'
+        ],
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Root endpoint with documentation
+app.get('/', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Comprehensive AnimeWorld API</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white; 
+                    margin: 0; 
+                    padding: 20px; 
+                }
+                .container { 
+                    max-width: 1200px; 
+                    margin: 0 auto; 
+                    background: rgba(0,0,0,0.2); 
+                    padding: 30px; 
+                    border-radius: 10px; 
+                }
+                .header { text-align: center; margin-bottom: 40px; }
+                .endpoint { 
+                    background: rgba(0,0,0,0.3); 
+                    padding: 15px; 
+                    margin: 15px 0; 
+                    border-radius: 5px; 
+                    border-left: 4px solid #4ecdc4;
+                }
+                .method { 
+                    background: #4ecdc4; 
+                    color: #000; 
+                    padding: 3px 8px; 
+                    border-radius: 3px; 
+                    font-weight: bold; 
+                    margin-right: 10px; 
+                }
+                .url { font-family: monospace; color: #ffd700; }
+                .description { margin-top: 8px; color: #ccc; }
+                .stats {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 20px;
+                    margin: 30px 0;
+                }
+                .stat-card {
+                    background: rgba(0,0,0,0.3);
+                    padding: 20px;
+                    border-radius: 8px;
+                    text-align: center;
+                }
+                .test-links a {
+                    color: #4ecdc4;
+                    text-decoration: none;
+                    margin-right: 15px;
+                }
+                .test-links a:hover { text-decoration: underline; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>📺 Comprehensive AnimeWorld API</h1>
+                    <p>Access 2000+ anime with automatic database building and comprehensive player extraction</p>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>${ANIME_DATABASE.size}</h3>
+                        <p>Anime Available</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${DATABASE_LOADED ? 'Ready' : 'Building...'}</h3>
+                        <p>Database Status</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Multi-Source</h3>
+                        <p>Player Extraction</p>
+                    </div>
+                </div>
+
+                <h2>🔗 API Endpoints</h2>
+                
+                <div class="endpoint">
+                    <span class="method">GET</span>
+                    <span class="url">/api/anime/{anilist_id}/{season}/{episode}</span>
+                    <div class="description">Get anime episode with player URLs (JSON response)</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method">GET</span>
+                    <span class="url">/anime/{anilist_id}/{episode}</span>
+                    <div class="description">Direct embed player (Full-screen iframe for embedding)</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method">GET</span>
+                    <span class="url">/api/search/{query}</span>
+                    <div class="description">Search anime database</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method">GET</span>
+                    <span class="url">/api/browse/{page}</span>
+                    <div class="description">Browse all anime (paginated)</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method">GET</span>
+                    <span class="url">/api/stats</span>
+                    <div class="description">Database statistics and sample data</div>
+                </div>
+
+                <h2>🧪 Test Links</h2>
+                <div class="test-links">
+                    <a href="/anime/178025/1" target="_blank">Gachiakuta Episode 1</a>
+                    <a href="/anime/185660/1" target="_blank">Wind Breaker Episode 1</a>
+                    <a href="/anime/21/1" target="_blank">One Piece Episode 1</a>
+                    <a href="/api/search/naruto" target="_blank">Search Naruto</a>
+                    <a href="/api/browse/1" target="_blank">Browse Anime</a>
+                </div>
+
+                <h2>📋 Features</h2>
+                <ul>
+                    <li>✅ Auto-builds database of 2000+ anime from AnimeWorld</li>
+                    <li>✅ Comprehensive video player extraction</li>
+                    <li>✅ Multiple fallback URL patterns for episodes</li>
+                    <li>✅ Direct embed support for iframe viewing</li>
+                    <li>✅ Server selection and error recovery</li>
+                    <li>✅ Real-time search and browse functionality</li>
+                    <li>✅ Automatic caching and performance optimization</li>
+                </ul>
+
+                <p><strong>Database Status:</strong> ${DATABASE_LOADED ? 'Loaded and ready!' : 'Building database in background...'}</p>
+            </div>
+        </body>
+        </html>
+    `);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, async () => {
+    console.log(`🚀 Comprehensive AnimeWorld API running on port ${PORT}`);
+    console.log(`📊 Database building in progress...`);
+    console.log(`\n🎯 KEY FEATURES:`);
+    console.log(`   ✅ Auto-discovers 2000+ anime from AnimeWorld`);
+    console.log(`   ✅ Comprehensive player URL extraction`);
+    console.log(`   ✅ Direct iframe embed support`);
+    console.log(`   ✅ Multiple fallback mechanisms`);
+    console.log(`   ✅ Real-time search and browse`);
+    console.log(`\n🔗 MAIN ENDPOINTS:`);
+    console.log(`   📺 Direct Embed: http://localhost:${PORT}/anime/{anilist_id}/{episode}`);
+    console.log(`   📋 API Data: http://localhost:${PORT}/api/anime/{anilist_id}/{season}/{episode}`);
+    console.log(`   🔍 Search: http://localhost:${PORT}/api/search/{query}`);
+    console.log(`   📖 Documentation: http://localhost:${PORT}/`);
+    console.log(`\n🧪 TEST THESE:`);
+    console.log(`   - Gachiakuta: http://localhost:${PORT}/anime/178025/1`);
+    console.log(`   - Wind Breaker: http://localhost:${PORT}/anime/185660/1`);
+    console.log(`   - One Piece: http://localhost:${PORT}/anime/21/1`);
+    console.log(`\n⚡ Database will be ready shortly...`);
+});
+
+module.exports = app;
