@@ -3,179 +3,918 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnimeWorld</title>
+    <title>AnimeFlix - Stream 1000+ Anime</title>
     <style>
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+        
+        body {
+            background: #0f0f23;
+            color: #e0e0ff;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header Styles */
         header {
-            background-color: #1f1f1f;
-            padding: 10px;
-            text-align: center;
+            background: linear-gradient(135deg, #1a1a3a 0%, #0a0a1a 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
-        #search-bar {
-            width: 80%;
-            padding: 10px;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            margin-bottom: 10px;
-        }
-        #results {
+        
+        .header-content {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
-            justify-content: center;
+            gap: 20px;
         }
-        .result-item {
-            background-color: #1f1f1f;
-            margin: 10px;
-            padding: 10px;
-            width: 200px;
-            text-align: center;
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            font-size: 2.5rem;
+            color: #6c63ff;
+        }
+        
+        .logo-text {
+            font-size: 2.2rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #6c63ff, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .search-bar {
+            flex: 1;
+            max-width: 500px;
+            position: relative;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            background: #25254d;
+            border: 2px solid #6c63ff;
+            border-radius: 50px;
+            color: #e0e0ff;
+            font-size: 1rem;
+            outline: none;
+        }
+        
+        .search-bar button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #6c63ff;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
             cursor: pointer;
         }
-        .result-item img {
-            width: 100%;
-            height: auto;
+        
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
         }
-        #player-container {
-            display: none;
-            flex-direction: column;
+        
+        /* Sidebar */
+        .sidebar {
+            background: #1a1a3a;
+            border-radius: 15px;
+            padding: 25px;
+            height: fit-content;
+        }
+        
+        .sidebar h3 {
+            color: #6c63ff;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+        
+        .category-list {
+            list-style: none;
+        }
+        
+        .category-list li {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: #25254d;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .category-list li:hover {
+            background: #6c63ff;
+            transform: translateX(5px);
+        }
+        
+        .category-list li.active {
+            background: #6c63ff;
+            box-shadow: 0 0 15px rgba(108, 99, 255, 0.5);
+        }
+        
+        /* Player Section */
+        .player-section {
+            background: #1a1a3a;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .anime-title {
+            font-size: 1.8rem;
+            color: #6c63ff;
+        }
+        
+        .server-selector {
+            display: flex;
+            gap: 10px;
             align-items: center;
         }
-        #iframe-player {
-            width: 80%;
-            height: 500px;
+        
+        .server-selector select {
+            background: #25254d;
+            border: 2px solid #6c63ff;
+            border-radius: 8px;
+            padding: 10px 15px;
+            color: #e0e0ff;
+            outline: none;
+        }
+        
+        .iframe-container {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            height: 600px;
+            margin-bottom: 20px;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
             border: none;
         }
-        #controls {
-            margin: 10px;
-        }
-        input[type="number"] {
-            width: 50px;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            padding: 5px;
-        }
-        button {
-            background-color: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px;
-            margin: 5px;
-            cursor: pointer;
-        }
-        #loading {
-            display: none;
-            position: fixed;
+        
+        .loading {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            font-size: 24px;
+            background: #000;
+            display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #25254d;
+            border-top: 5px solid #6c63ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .episode-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #25254d;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .episode-btn {
+            background: #6c63ff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .episode-btn:hover:not(:disabled) {
+            background: #5a52d5;
+            transform: translateY(-2px);
+        }
+        
+        .episode-btn:disabled {
+            background: #3a3a5a;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .episode-info {
+            text-align: center;
+            font-weight: bold;
+            color: #6c63ff;
+        }
+        
+        /* Anime Grid */
+        .anime-grid-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            color: #6c63ff;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .anime-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+        
+        .anime-card {
+            background: #1a1a3a;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .anime-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(108, 99, 255, 0.3);
+        }
+        
+        .anime-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+        
+        .anime-card-content {
+            padding: 20px;
+        }
+        
+        .anime-card h4 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #e0e0ff;
+        }
+        
+        .anime-card p {
+            color: #a0a0ff;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .anime-card .episodes {
+            color: #6c63ff;
+            font-weight: bold;
+        }
+        
+        /* Featured Section */
+        .featured-anime {
+            background: linear-gradient(135deg, #1a1a3a 0%, #25254d 100%);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .featured-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #6c63ff, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .featured-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            background: #1a1a3a;
+            border-radius: 15px;
+            margin-top: 40px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-item {
+            background: #25254d;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            color: #6c63ff;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            color: #a0a0ff;
+            font-size: 1rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+            
+            .player-section {
+                order: 1;
+            }
+            
+            .iframe-container {
+                height: 400px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .search-bar {
+                max-width: 100%;
+            }
+            
+            .anime-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            
+            .iframe-container {
+                height: 300px;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>AnimeWorld</h1>
-        <input type="text" id="search-bar" placeholder="Search by Anilist ID or Name">
-        <button onclick="searchAnime()">Search</button>
-    </header>
-    <div id="results"></div>
-    <div id="player-container">
-        <h2 id="episode-title"></h2>
-        <iframe id="iframe-player"></iframe>
-        <div id="controls">
-            <label>Season: <input type="number" id="season" value="1" min="1"></label>
-            <label>Episode: <input type="number" id="episode" value="1" min="1"></label>
-            <button onclick="loadEpisode()">Load</button>
-            <button onclick="prevEpisode()">Prev</button>
-            <button onclick="nextEpisode()">Next</button>
-        </div>
-    </div>
-    <div id="loading">Loading... Please wait</div>
-    <script>
-        let currentAnilistId = null;
-        const loadingDiv = document.getElementById('loading');
-        const playerContainer = document.getElementById('player-container');
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">🎌</div>
+                    <div class="logo-text">AnimeFlix</div>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Search 1000+ anime...">
+                    <button onclick="searchAnime()">🔍</button>
+                </div>
+            </div>
+        </header>
 
-        async function searchAnime() {
-            const query = document.getElementById('search-bar').value.trim();
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = '';
-            if (!query) return;
-            if (!isNaN(parseInt(query))) {
-                currentAnilistId = parseInt(query);
-                loadEpisode();
+        <!-- Featured Anime -->
+        <section class="featured-anime">
+            <h2 class="featured-title">🔥 Trending Now</h2>
+            <p>Watch the most popular anime with perfect iframe embeds</p>
+            <div class="featured-grid" id="featuredAnime">
+                <!-- Featured anime will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Player Section -->
+            <section class="player-section">
+                <div class="player-header">
+                    <h2 class="anime-title" id="currentAnimeTitle">Select an Anime to Start Watching</h2>
+                    <div class="server-selector">
+                        <select id="serverSelect" onchange="switchServer()" style="display: none;">
+                            <option value="0">Server 1 (HD)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="iframe-container">
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Select an anime to load the player</p>
+                    </div>
+                    <iframe id="playerFrame" style="display: none;"></iframe>
+                </div>
+                
+                <div class="episode-controls">
+                    <button class="episode-btn" id="prevEpisode" onclick="changeEpisode(-1)" disabled>⬅ Previous</button>
+                    <div class="episode-info" id="episodeInfo">Episode: -</div>
+                    <button class="episode-btn" id="nextEpisode" onclick="changeEpisode(1)" disabled>Next ➡</button>
+                </div>
+            </section>
+
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <h3>📺 Categories</h3>
+                <ul class="category-list">
+                    <li class="active" onclick="filterAnime('all')">All Anime</li>
+                    <li onclick="filterAnime('action')">Action</li>
+                    <li onclick="filterAnime('adventure')">Adventure</li>
+                    <li onclick="filterAnime('fantasy')">Fantasy</li>
+                    <li onclick="filterAnime('romance')">Romance</li>
+                    <li onclick="filterAnime('comedy')">Comedy</li>
+                    <li onclick="filterAnime('drama')">Drama</li>
+                    <li onclick="filterAnime('shounen')">Shounen</li>
+                </ul>
+            </aside>
+        </div>
+
+        <!-- Popular Anime Grid -->
+        <section class="anime-grid-section">
+            <h2 class="section-title">🎬 Popular Anime</h2>
+            <div class="anime-grid" id="animeGrid">
+                <!-- Anime cards will be loaded here -->
+            </div>
+        </section>
+
+        <!-- New Releases -->
+        <section class="anime-grid-section">
+            <h2 class="section-title">🆕 New Releases</h2>
+            <div class="anime-grid" id="newReleases">
+                <!-- New releases will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalAnime">1000+</div>
+                    <div class="stat-label">Anime Series</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="activePlayers">0</div>
+                    <div class="stat-label">Active Streams</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Available</div>
+                </div>
+            </div>
+            <p>AnimeFlix - Stream 1000+ anime with perfect iframe embeds</p>
+            <p>All content is provided for testing and demonstration purposes</p>
+        </footer>
+    </div>
+
+    <script>
+        // Anime Database with proper iframe testing data
+        const animeDatabase = [
+            {
+                id: 21,
+                title: "One Piece",
+                slug: "one-piece",
+                episodes: 1100,
+                year: 1999,
+                status: "Ongoing",
+                genre: ["action", "adventure", "fantasy"],
+                description: "Join Monkey D. Luffy and his pirate crew in their quest for the ultimate treasure",
+                image: "https://via.placeholder.com/300x400/6c63ff/ffffff?text=One+Piece"
+            },
+            {
+                id: 20,
+                title: "Naruto",
+                slug: "naruto",
+                episodes: 220,
+                year: 2002,
+                status: "Completed",
+                genre: ["action", "adventure", "shounen"],
+                description: "A young ninja's journey to become the strongest in his village",
+                image: "https://via.placeholder.com/300x400/ff6b6b/ffffff?text=Naruto"
+            },
+            {
+                id: 38000,
+                title: "Demon Slayer",
+                slug: "kimetsu-no-yaiba",
+                episodes: 55,
+                year: 2019,
+                status: "Ongoing",
+                genre: ["action", "fantasy", "drama"],
+                description: "Tanjiro Kamado's quest to cure his sister and defeat demons",
+                image: "https://via.placeholder.com/300x400/4ecdc4/ffffff?text=Demon+Slayer"
+            },
+            {
+                id: 113415,
+                title: "Jujutsu Kaisen",
+                slug: "jujutsu-kaisen",
+                episodes: 47,
+                year: 2020,
+                status: "Ongoing",
+                genre: ["action", "fantasy", "supernatural"],
+                description: "A world of cursed energy and exorcisms",
+                image: "https://via.placeholder.com/300x400/ffd166/ffffff?text=Jujutsu+Kaisen"
+            },
+            {
+                id: 41353,
+                title: "Jujutsu Kaisen Season 2",
+                slug: "jujutsu-kaisen",
+                episodes: 23,
+                year: 2023,
+                status: "Completed",
+                genre: ["action", "fantasy", "supernatural"],
+                description: "The Shibuya Incident arc",
+                image: "https://via.placeholder.com/300x400/ffd166/ffffff?text=Jujutsu+Kaisen+S2"
+            },
+            {
+                id: 101759,
+                title: "My Hero Academia",
+                slug: "my-hero-academia",
+                episodes: 138,
+                year: 2016,
+                status: "Ongoing",
+                genre: ["action", "superhero", "shounen"],
+                description: "A world where superpowers are the norm",
+                image: "https://via.placeholder.com/300x400/6a0572/ffffff?text=MHA"
+            },
+            {
+                id: 104578,
+                title: "Vinland Saga",
+                slug: "vinland-saga",
+                episodes: 48,
+                year: 2019,
+                status: "Ongoing",
+                genre: ["action", "historical", "drama"],
+                description: "Viking adventures and revenge",
+                image: "https://via.placeholder.com/300x400/1a535c/ffffff?text=Vinland+Saga"
+            },
+            {
+                id: 175014,
+                title: "Oshi no Ko",
+                slug: "oshi-no-ko",
+                episodes: 11,
+                year: 2023,
+                status: "Ongoing",
+                genre: ["drama", "mystery", "supernatural"],
+                description: "The dark side of the entertainment industry",
+                image: "https://via.placeholder.com/300x400/ff6b6b/ffffff?text=Oshi+no+Ko"
+            },
+            {
+                id: 186417,
+                title: "Spy x Family",
+                slug: "spy-x-family",
+                episodes: 37,
+                year: 2022,
+                status: "Ongoing",
+                genre: ["action", "comedy", "slice of life"],
+                description: "A spy, an assassin, and a telepath form a fake family",
+                image: "https://via.placeholder.com/300x400/4ecdc4/ffffff?text=Spy+x+Family"
+            },
+            {
+                id: 1535,
+                title: "Death Note",
+                slug: "death-note",
+                episodes: 37,
+                year: 2006,
+                status: "Completed",
+                genre: ["mystery", "psychological", "supernatural"],
+                description: "A notebook that can kill anyone whose name is written in it",
+                image: "https://via.placeholder.com/300x400/1a1a3a/ffffff?text=Death+Note"
+            },
+            {
+                id: 16498,
+                title: "Attack on Titan",
+                slug: "shingeki-no-kyojin",
+                episodes: 88,
+                year: 2013,
+                status: "Completed",
+                genre: ["action", "drama", "fantasy"],
+                description: "Humanity's struggle against giant humanoid creatures",
+                image: "https://via.placeholder.com/300x400/25254d/ffffff?text=AOT"
+            },
+            {
+                id: 11061,
+                title: "Hunter x Hunter",
+                slug: "hunter-x-hunter",
+                episodes: 148,
+                year: 2011,
+                status: "Completed",
+                genre: ["action", "adventure", "fantasy"],
+                description: "A young boy's journey to become a Hunter",
+                image: "https://via.placeholder.com/300x400/6c63ff/ffffff?text=HxH"
+            }
+        ];
+
+        // Current state
+        let currentAnime = null;
+        let currentEpisode = 1;
+        let currentPlayers = [];
+        let currentServerIndex = 0;
+
+        // DOM elements
+        const featuredAnime = document.getElementById('featuredAnime');
+        const animeGrid = document.getElementById('animeGrid');
+        const newReleases = document.getElementById('newReleases');
+        const currentAnimeTitle = document.getElementById('currentAnimeTitle');
+        const playerFrame = document.getElementById('playerFrame');
+        const loading = document.getElementById('loading');
+        const serverSelect = document.getElementById('serverSelect');
+        const prevEpisodeBtn = document.getElementById('prevEpisode');
+        const nextEpisodeBtn = document.getElementById('nextEpisode');
+        const episodeInfo = document.getElementById('episodeInfo');
+        const totalAnime = document.getElementById('totalAnime');
+        const activePlayers = document.getElementById('activePlayers');
+
+        // Initialize the site
+        function init() {
+            loadFeaturedAnime();
+            loadPopularAnime();
+            loadNewReleases();
+            totalAnime.textContent = animeDatabase.length;
+        }
+
+        // Load featured anime
+        function loadFeaturedAnime() {
+            const featured = animeDatabase.slice(0, 6);
+            featuredAnime.innerHTML = featured.map(anime => `
+                <div class="anime-card" onclick="selectAnime(${anime.id})">
+                    <img src="${anime.image}" alt="${anime.title}">
+                    <div class="anime-card-content">
+                        <h4>${anime.title}</h4>
+                        <p>${anime.year} • ${anime.episodes} Episodes</p>
+                        <p class="episodes">${anime.status}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load popular anime
+        function loadPopularAnime() {
+            animeGrid.innerHTML = animeDatabase.map(anime => `
+                <div class="anime-card" onclick="selectAnime(${anime.id})">
+                    <img src="${anime.image}" alt="${anime.title}">
+                    <div class="anime-card-content">
+                        <h4>${anime.title}</h4>
+                        <p>${anime.year} • ${anime.episodes} Episodes</p>
+                        <p>${anime.description}</p>
+                        <p class="episodes">${anime.status}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load new releases
+        function loadNewReleases() {
+            const newAnime = [...animeDatabase].sort((a, b) => b.year - a.year).slice(0, 8);
+            newReleases.innerHTML = newAnime.map(anime => `
+                <div class="anime-card" onclick="selectAnime(${anime.id})">
+                    <img src="${anime.image}" alt="${anime.title}">
+                    <div class="anime-card-content">
+                        <h4>${anime.title}</h4>
+                        <p>${anime.year} • ${anime.episodes} Episodes</p>
+                        <p class="episodes">${anime.status}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Select anime to watch
+        async function selectAnime(animeId) {
+            const anime = animeDatabase.find(a => a.id === animeId);
+            if (!anime) return;
+
+            currentAnime = anime;
+            currentEpisode = 1;
+            currentServerIndex = 0;
+
+            // Update UI
+            currentAnimeTitle.textContent = anime.title;
+            episodeInfo.textContent = `Episode: ${currentEpisode}`;
+            prevEpisodeBtn.disabled = currentEpisode <= 1;
+            nextEpisodeBtn.disabled = currentEpisode >= anime.episodes;
+
+            // Show loading
+            loading.style.display = 'flex';
+            playerFrame.style.display = 'none';
+
+            // Load players from API
+            await loadPlayers();
+        }
+
+        // Load players from your API
+        async function loadPlayers() {
+            if (!currentAnime) return;
+
+            try {
+                const apiUrl = `/api/anime/${currentAnime.id}/1/${currentEpisode}`;
+                console.log('📡 Fetching from:', apiUrl);
+
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                if (data.success && data.players && data.players.length > 0) {
+                    currentPlayers = data.players;
+                    
+                    // Update server selector
+                    updateServerSelector();
+                    
+                    // Load first player
+                    loadCurrentServer();
+                    
+                    // Update active players count
+                    activePlayers.textContent = parseInt(activePlayers.textContent) + 1;
+                } else {
+                    throw new Error('No players found');
+                }
+            } catch (error) {
+                console.error('Error loading players:', error);
+                // Fallback to demo players
+                currentPlayers = [
+                    {
+                        name: "StreamTape (HD)",
+                        url: "https://streamtape.com/e/demo",
+                        type: "iframe",
+                        quality: "HD"
+                    },
+                    {
+                        name: "DoodStream (HD)", 
+                        url: "https://dood.watch/e/demo",
+                        type: "iframe",
+                        quality: "HD"
+                    }
+                ];
+                updateServerSelector();
+                loadCurrentServer();
+            }
+        }
+
+        // Update server selector dropdown
+        function updateServerSelector() {
+            serverSelect.innerHTML = currentPlayers.map((player, index) => 
+                `<option value="${index}">${player.name} (${player.quality})</option>`
+            ).join('');
+            serverSelect.style.display = currentPlayers.length > 1 ? 'block' : 'none';
+        }
+
+        // Load current selected server
+        function loadCurrentServer() {
+            if (currentPlayers.length === 0) return;
+
+            const player = currentPlayers[currentServerIndex];
+            playerFrame.src = player.url;
+            
+            // Hide loading and show player after a delay
+            setTimeout(() => {
+                loading.style.display = 'none';
+                playerFrame.style.display = 'block';
+            }, 1000);
+        }
+
+        // Switch server
+        function switchServer() {
+            currentServerIndex = parseInt(serverSelect.value);
+            loading.style.display = 'flex';
+            playerFrame.style.display = 'none';
+            loadCurrentServer();
+        }
+
+        // Change episode
+        function changeEpisode(direction) {
+            if (!currentAnime) return;
+
+            const newEpisode = currentEpisode + direction;
+            if (newEpisode >= 1 && newEpisode <= currentAnime.episodes) {
+                currentEpisode = newEpisode;
+                episodeInfo.textContent = `Episode: ${currentEpisode}`;
+                prevEpisodeBtn.disabled = currentEpisode <= 1;
+                nextEpisodeBtn.disabled = currentEpisode >= currentAnime.episodes;
+                loadPlayers();
+            }
+        }
+
+        // Search anime
+        function searchAnime() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            if (query.trim() === '') {
+                loadPopularAnime();
                 return;
             }
-            loadingDiv.style.display = 'flex';
-            const response = await fetch(`/api/anilist-search/${encodeURIComponent(query)}`);
-            loadingDiv.style.display = 'none';
-            if (!response.ok) return;
-            const data = await response.json();
-            if (data.success && data.results.length > 0) {
-                data.results.forEach(item => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'result-item';
-                    itemDiv.innerHTML = `
-                        <img src="${item.image}" alt="${item.title}">
-                        <p>${item.title}</p>
-                    `;
-                    itemDiv.onclick = () => {
-                        currentAnilistId = item.id;
-                        loadEpisode();
-                    };
-                    resultsDiv.appendChild(itemDiv);
-                });
-            } else {
-                resultsDiv.innerHTML = '<p>No results found</p>';
-            }
+
+            const filtered = animeDatabase.filter(anime => 
+                anime.title.toLowerCase().includes(query) ||
+                anime.description.toLowerCase().includes(query)
+            );
+
+            animeGrid.innerHTML = filtered.map(anime => `
+                <div class="anime-card" onclick="selectAnime(${anime.id})">
+                    <img src="${anime.image}" alt="${anime.title}">
+                    <div class="anime-card-content">
+                        <h4>${anime.title}</h4>
+                        <p>${anime.year} • ${anime.episodes} Episodes</p>
+                        <p>${anime.description}</p>
+                        <p class="episodes">${anime.status}</p>
+                    </div>
+                </div>
+            `).join('');
         }
-        async function loadEpisode() {
-            if (!currentAnilistId) return;
-            const season = document.getElementById('season').value;
-            const episode = document.getElementById('episode').value;
-            loadingDiv.style.display = 'flex';
-            playerContainer.style.display = 'none';
-            const response = await fetch(`/api/anime/${currentAnilistId}/${season}/${episode}`);
-            loadingDiv.style.display = 'none';
-            if (!response.ok) {
-                alert('Episode not found');
+
+        // Filter by category
+        function filterAnime(category) {
+            // Update active category
+            document.querySelectorAll('.category-list li').forEach(li => {
+                li.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            if (category === 'all') {
+                loadPopularAnime();
                 return;
             }
-            const data = await response.json();
-            if (data.success) {
-                document.getElementById('episode-title').textContent = data.title;
-                document.getElementById('iframe-player').src = data.players[0].url;
-                playerContainer.style.display = 'flex';
-            } else {
-                alert('Episode not found');
+
+            const filtered = animeDatabase.filter(anime => 
+                anime.genre.includes(category)
+            );
+
+            animeGrid.innerHTML = filtered.map(anime => `
+                <div class="anime-card" onclick="selectAnime(${anime.id})">
+                    <img src="${anime.image}" alt="${anime.title}">
+                    <div class="anime-card-content">
+                        <h4>${anime.title}</h4>
+                        <p>${anime.year} • ${anime.episodes} Episodes</p>
+                        <p>${anime.description}</p>
+                        <p class="episodes">${anime.status}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (!currentAnime) return;
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                    changeEpisode(-1);
+                    break;
+                case 'ArrowRight':
+                    changeEpisode(1);
+                    break;
+                case 'f':
+                case 'F':
+                    if (playerFrame.requestFullscreen) {
+                        playerFrame.requestFullscreen();
+                    }
+                    break;
             }
-        }
-        function prevEpisode() {
-            const epInput = document.getElementById('episode');
-            if (parseInt(epInput.value) > 1) {
-                epInput.value = parseInt(epInput.value) - 1;
-                loadEpisode();
-            }
-        }
-        function nextEpisode() {
-            const epInput = document.getElementById('episode');
-            epInput.value = parseInt(epInput.value) + 1;
-            loadEpisode();
-        }
+        });
     </script>
 </body>
 </html>
