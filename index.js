@@ -17,8 +17,8 @@ app.use(express.static('public'));
 
 // ========== COMPREHENSIVE ANIME DATABASE ==========
 const ANIME_DATABASE = {
-    // Popular Anime - CORRECTED Slugs based on actual AnimeWorld URLs
-    '21': { slug: 'one-piece', title: 'One Piece', alternativeSlugs: ['one-piece-tv'] },
+    // Popular Anime - Updated for ToonStream compatibility
+    '21': { slug: 'one-piece', title: 'One Piece', alternativeSlugs: ['one-piece-tv', 'onepiece'] },
     '20': { slug: 'naruto', title: 'Naruto', alternativeSlugs: ['naruto-tv'] },
     '1735': { slug: 'naruto-shippuden', title: 'Naruto Shippuden', alternativeSlugs: ['naruto-shippuuden'] },
     '16498': { slug: 'attack-on-titan', title: 'Attack on Titan', alternativeSlugs: ['shingeki-no-kyojin', 'aot'] },
@@ -29,7 +29,7 @@ const ANIME_DATABASE = {
     '11061': { slug: 'tokyo-ghoul', title: 'Tokyo Ghoul', alternativeSlugs: [] },
     '23283': { slug: 'sword-art-online', title: 'Sword Art Online', alternativeSlugs: ['sao'] },
     
-    // Fixed major anime slugs
+    // Major anime with ToonStream compatible slugs
     '1': { slug: 'cowboy-bebop', title: 'Cowboy Bebop', alternativeSlugs: [] },
     '44': { slug: 'hunter-x-hunter-2011', title: 'Hunter x Hunter', alternativeSlugs: ['hunter-x-hunter', 'hxh'] },
     '104': { slug: 'bleach', title: 'Bleach', alternativeSlugs: ['bleach-tv'] },
@@ -40,8 +40,9 @@ const ANIME_DATABASE = {
     '30015': { slug: 'kaguya-sama-love-is-war', title: 'Kaguya-sama: Love Is War', alternativeSlugs: ['kaguya-sama'] },
     '108632': { slug: 'frieren-beyond-journeys-end', title: 'Frieren: Beyond Journey\'s End', alternativeSlugs: ['frieren', 'sousou-no-frieren'] },
     '99263': { slug: 'solo-leveling', title: 'Solo Leveling', alternativeSlugs: [] },
-
-    // Additional verified anime with proper slugs
+    
+    // More anime
+    '178025': { slug: 'kaiju-no-8', title: 'Kaiju No. 8', alternativeSlugs: ['kaiju-8', 'monster-no-8'] },
     '9253': { slug: 'steins-gate', title: 'Steins;Gate', alternativeSlugs: ['steinsgate'] },
     '6547': { slug: 'angel-beats', title: 'Angel Beats!', alternativeSlugs: [] },
     '20583': { slug: 'noragami', title: 'Noragami', alternativeSlugs: [] },
@@ -64,23 +65,17 @@ const ANIME_DATABASE = {
     '61845': { slug: 'mashle', title: 'Mashle: Magic and Muscles', alternativeSlugs: [] },
 };
 
-// ========== SOURCE CONFIGURATION ==========
+// ========== TOONSTREAM SOURCE CONFIGURATION ==========
 const SOURCES = {
-    ANIMEWORLD: {
-        name: 'AnimeWorld',
-        baseUrl: 'https://watchanimeworld.in',
-        searchUrl: 'https://watchanimeworld.in/?s=',
-        episodeUrl: 'https://watchanimeworld.in/episode'
-    },
-    BACKUP: {
-        name: 'Backup Source',
-        baseUrl: 'https://animeworld-india.me',
-        searchUrl: 'https://animeworld-india.me/?s=',
-        episodeUrl: 'https://animeworld-india.me/episode'
+    TOONSTREAM: {
+        name: 'ToonStream',
+        baseUrl: 'https://toonstream.love',
+        searchUrl: 'https://toonstream.love/?s=',
+        episodeUrl: 'https://toonstream.love'
     }
 };
 
-// ========== IMPROVED ANIME SLUG RESOLVER ==========
+// ========== TOONSTREAM ANIME SLUG RESOLVER ==========
 async function getAnimeSlug(anilistId) {
     // Check database first
     if (ANIME_DATABASE[anilistId]) {
@@ -120,9 +115,9 @@ async function getAnimeSlug(anilistId) {
 
             console.log(`📋 Found titles from AniList: ${titles.join(', ')}`);
 
-            // Try searching with each title
+            // Try searching with each title on ToonStream
             for (const title of titles) {
-                const searchResults = await searchAnime(title, 'ANIMEWORLD');
+                const searchResults = await searchAnime(title);
                 if (searchResults.length > 0) {
                     const slug = searchResults[0].slug;
                     // Add to database for future use
@@ -142,7 +137,7 @@ async function getAnimeSlug(anilistId) {
     
     // Final fallback - try searching with the ID as a number
     try {
-        const searchResults = await searchAnime(anilistId, 'ANIMEWORLD');
+        const searchResults = await searchAnime(anilistId);
         if (searchResults.length > 0) {
             return searchResults[0].slug;
         }
@@ -154,13 +149,13 @@ async function getAnimeSlug(anilistId) {
     return `anime-${anilistId}`;
 }
 
-// ========== IMPROVED ANIME SEARCH FUNCTION ==========
-async function searchAnime(query, source = 'ANIMEWORLD') {
+// ========== TOONSTREAM SEARCH FUNCTION ==========
+async function searchAnime(query) {
     try {
-        const config = SOURCES[source];
+        const config = SOURCES.TOONSTREAM;
         const searchUrl = `${config.searchUrl}${encodeURIComponent(query)}`;
         
-        console.log(`🔍 Searching for "${query}" on ${source}: ${searchUrl}`);
+        console.log(`🔍 Searching for "${query}" on ToonStream: ${searchUrl}`);
         
         const response = await axios.get(searchUrl, {
             headers: {
@@ -179,30 +174,28 @@ async function searchAnime(query, source = 'ANIMEWORLD') {
         const $ = cheerio.load(response.data);
         const results = [];
 
-        // Enhanced selectors for better search result extraction
+        // ToonStream specific selectors - analyze their HTML structure
         const searchSelectors = [
-            'article.post',
+            '.post',
+            'article',
             '.search-result',
             '.anime-item',
-            'article',
-            '.post',
-            '.result-item',
-            '.anime-card'
+            '.entry',
+            '.result-item'
         ];
 
         for (const selector of searchSelectors) {
             $(selector).each((i, el) => {
                 const $el = $(el);
                 
-                // Multiple ways to get title
+                // Multiple ways to get title and URL for ToonStream
                 const titleSelectors = [
                     'h2 a',
-                    'h3 a', 
-                    '.title a',
+                    'h3 a',
                     '.entry-title a',
-                    'a[href*="/episode/"]',
-                    'a[href*="/anime/"]',
-                    '.post-title a'
+                    '.post-title a',
+                    'a.post-link',
+                    '.title a'
                 ];
                 
                 let title = '';
@@ -218,10 +211,10 @@ async function searchAnime(query, source = 'ANIMEWORLD') {
                 }
 
                 const image = $el.find('img').attr('src') || $el.find('img').attr('data-src') || '';
-                const description = $el.find('p, .entry-content, .excerpt').first().text().trim() || '';
+                const description = $el.find('p, .excerpt, .entry-summary').first().text().trim() || '';
                 
                 if (title && url && !results.some(r => r.url === url)) {
-                    let slug = extractSlugFromUrl(url);
+                    let slug = extractToonStreamSlug(url);
                     
                     if (slug && slug.length > 2) {
                         results.push({
@@ -230,18 +223,18 @@ async function searchAnime(query, source = 'ANIMEWORLD') {
                             url: url,
                             image: image,
                             description: description,
-                            source: source
+                            source: 'TOONSTREAM'
                         });
                     }
                 }
             });
             
-            if (results.length > 0) break; // If we found results with one selector, use them
+            if (results.length > 0) break;
         }
 
-        console.log(`✅ Found ${results.length} results for "${query}" on ${source}`);
+        console.log(`✅ Found ${results.length} results for "${query}" on ToonStream`);
         
-        // Sort results by relevance (exact match first)
+        // Sort results by relevance
         results.sort((a, b) => {
             const queryLower = query.toLowerCase();
             const aTitle = a.title.toLowerCase();
@@ -257,28 +250,26 @@ async function searchAnime(query, source = 'ANIMEWORLD') {
         
         return results;
     } catch (error) {
-        console.error(`❌ Search error (${source}):`, error.message);
+        console.error(`❌ ToonStream search error:`, error.message);
         return [];
     }
 }
 
-// ========== IMPROVED SLUG EXTRACTION ==========
-function extractSlugFromUrl(url) {
+// ========== TOONSTREAM SLUG EXTRACTION ==========
+function extractToonStreamSlug(url) {
     if (!url) return '';
     
     // Remove trailing slash and decode URL
     url = decodeURIComponent(url.replace(/\/$/, ''));
     
-    // Multiple extraction patterns for different URL structures
+    // ToonStream URL patterns
     const patterns = [
-        // Standard episode URLs: /episode/anime-name-episode-1/
-        /\/episode\/([^\/]+?)(?:-episode-\d+)?(?:\/)?$/,
-        // Anime page URLs: /anime/anime-name/
-        /\/anime\/([^\/]+)(?:\/)?$/,
+        // Episode URLs: /anime-name-episode-1/
+        /\/([^\/]+)-episode-\d+(?:\/)?$/,
+        // Anime page URLs: /anime-name/
+        /\/([^\/]+)(?:\/)?$/,
         // Watch URLs: /watch/anime-name/
-        /\/watch\/([^\/]+)(?:\/)?$/,
-        // Direct anime name after domain: /anime-name/
-        /\/([^\/]+?)(?:-episode-\d+)?(?:\/)?$/
+        /\/watch\/([^\/]+)(?:\/)?$/
     ];
     
     for (const pattern of patterns) {
@@ -288,50 +279,50 @@ function extractSlugFromUrl(url) {
             
             // Clean up the slug
             slug = slug
-                .replace(/-episode-\d+$/, '')  // Remove episode numbers
-                .replace(/-season-\d+$/, '')   // Remove season numbers
-                .replace(/-\d{4}$/, '')        // Remove years
-                .replace(/^watch-/, '')        // Remove 'watch-' prefix
-                .replace(/^anime-/, '')        // Remove 'anime-' prefix
+                .replace(/-episode-\d+$/, '')
+                .replace(/-season-\d+$/, '')
+                .replace(/-\d{4}$/, '')
+                .replace(/^watch-/, '')
                 .toLowerCase()
                 .trim();
             
-            // Ensure slug is meaningful
             if (slug.length > 2 && !slug.includes('?') && !slug.includes('&')) {
-                console.log(`🎯 Extracted slug: "${slug}" from URL: ${url}`);
+                console.log(`🎯 Extracted ToonStream slug: "${slug}" from URL: ${url}`);
                 return slug;
             }
         }
     }
     
-    console.log(`❌ Could not extract slug from URL: ${url}`);
+    console.log(`❌ Could not extract slug from ToonStream URL: ${url}`);
     return '';
 }
 
-// ========== ENHANCED PLAYER EXTRACTION ==========
-function extractVideoPlayers(html, source) {
+// ========== TOONSTREAM PLAYER EXTRACTION ==========
+function extractToonStreamPlayers(html) {
     const $ = cheerio.load(html);
     const players = [];
-    const foundUrls = new Set(); // Prevent duplicates
+    const foundUrls = new Set();
 
-    console.log(`🎬 Extracting players from ${source}...`);
+    console.log(`🎬 Extracting players from ToonStream...`);
 
     // Method 1: Direct iframes
     $('iframe').each((i, el) => {
         let src = $(el).attr('src') || $(el).attr('data-src');
         if (src) {
             if (src.startsWith('//')) src = 'https:' + src;
+            if (src.startsWith('/')) src = 'https://toonstream.love' + src;
+            
             if (isValidVideoUrl(src) && !foundUrls.has(src)) {
                 foundUrls.add(src);
                 players.push({
                     type: 'embed',
-                    server: `${source} Server ${players.length + 1}`,
+                    server: `ToonStream Server ${players.length + 1}`,
                     url: src,
                     quality: 'HD',
                     format: 'iframe',
-                    source: source
+                    source: 'TOONSTREAM'
                 });
-                console.log(`📺 Found iframe: ${src}`);
+                console.log(`📺 Found ToonStream iframe: ${src}`);
             }
         }
     });
@@ -340,29 +331,32 @@ function extractVideoPlayers(html, source) {
     $('video, source').each((i, el) => {
         const src = $(el).attr('src') || $(el).attr('data-src');
         if (src) {
-            const fullSrc = src.startsWith('//') ? 'https:' + src : src;
+            let fullSrc = src;
+            if (src.startsWith('//')) fullSrc = 'https:' + src;
+            if (src.startsWith('/')) fullSrc = 'https://toonstream.love' + src;
+            
             if (isValidVideoUrl(fullSrc) && !foundUrls.has(fullSrc)) {
                 foundUrls.add(fullSrc);
                 players.push({
                     type: 'direct',
-                    server: `${source} Direct ${players.length + 1}`,
+                    server: `ToonStream Direct ${players.length + 1}`,
                     url: fullSrc,
                     quality: 'Auto',
                     format: getVideoFormat(fullSrc),
-                    source: source
+                    source: 'TOONSTREAM'
                 });
-                console.log(`🎥 Found video tag: ${fullSrc}`);
+                console.log(`🎥 Found ToonStream video: ${fullSrc}`);
             }
         }
     });
 
-    // Method 3: Enhanced script content analysis
+    // Method 3: Enhanced script analysis for ToonStream
     $('script').each((i, el) => {
         const scriptContent = $(el).html();
         if (scriptContent && scriptContent.length > 50) {
-            // More comprehensive video patterns
+            // ToonStream specific patterns
             const videoPatterns = [
-                // Common player configurations
+                // Standard player configurations
                 /(?:src|file|url|video|stream|link)["'\s]*:["'\s]*["']([^"']+)["']/gi,
                 /(?:videoUrl|streamUrl|embedUrl|playerUrl)["'\s]*:["'\s]*["']([^"']+)["']/gi,
                 // Direct URL patterns
@@ -370,7 +364,9 @@ function extractVideoPlayers(html, source) {
                 // Embed patterns
                 /(https?:\/\/[^\s"'<>]*\/(?:embed|player|video|stream)\/[^\s"'<>]*)/gi,
                 // Known video hosting domains
-                /(https?:\/\/[^\s"'<>]*(?:streamtape|doodstream|mixdrop|mp4upload|vidstream|gogostream)[^\s"'<>]*)/gi,
+                /(https?:\/\/[^\s"'<>]*(?:streamtape|doodstream|mixdrop|mp4upload|vidstream|gogostream|filemoon|streamwish)[^\s"'<>]*)/gi,
+                // ToonStream specific patterns
+                /toonstream\.love\/[^\s"'<>]*/gi,
                 // Generic streaming patterns
                 /(https?:\/\/[^\s"'<>]*(?:embed|player|video|stream)[^\s"'<>]*)/gi
             ];
@@ -378,24 +374,25 @@ function extractVideoPlayers(html, source) {
             for (const pattern of videoPatterns) {
                 let match;
                 while ((match = pattern.exec(scriptContent)) !== null) {
-                    let url = match[1];
+                    let url = match[1] || match[0];
                     
                     // Clean up the URL
                     url = url.replace(/['"]/g, '').trim();
                     
                     if (url.startsWith('//')) url = 'https:' + url;
+                    if (url.startsWith('/') && !url.startsWith('//')) url = 'https://toonstream.love' + url;
                     
                     if (isValidVideoUrl(url) && !foundUrls.has(url)) {
                         foundUrls.add(url);
                         players.push({
                             type: 'script',
-                            server: `${source} Script ${players.length + 1}`,
+                            server: `ToonStream Script ${players.length + 1}`,
                             url: url,
                             quality: 'HD',
                             format: getVideoFormat(url),
-                            source: source
+                            source: 'TOONSTREAM'
                         });
-                        console.log(`🔧 Found script URL: ${url}`);
+                        console.log(`🔧 Found ToonStream script URL: ${url}`);
                     }
                 }
             }
@@ -403,30 +400,55 @@ function extractVideoPlayers(html, source) {
     });
 
     // Method 4: Data attributes
-    $('[data-src], [data-url], [data-file], [data-video], [data-stream]').each((i, el) => {
-        const attrs = ['data-src', 'data-url', 'data-file', 'data-video', 'data-stream'];
+    $('[data-src], [data-url], [data-file], [data-video], [data-stream], [data-player]').each((i, el) => {
+        const attrs = ['data-src', 'data-url', 'data-file', 'data-video', 'data-stream', 'data-player'];
         for (const attr of attrs) {
             const src = $(el).attr(attr);
             if (src) {
-                const fullSrc = src.startsWith('//') ? 'https:' + src : src;
+                let fullSrc = src;
+                if (src.startsWith('//')) fullSrc = 'https:' + src;
+                if (src.startsWith('/')) fullSrc = 'https://toonstream.love' + src;
+                
                 if (isValidVideoUrl(fullSrc) && !foundUrls.has(fullSrc)) {
                     foundUrls.add(fullSrc);
                     players.push({
                         type: 'data',
-                        server: `${source} Data ${players.length + 1}`,
+                        server: `ToonStream Data ${players.length + 1}`,
                         url: fullSrc,
                         quality: 'Auto',
                         format: getVideoFormat(fullSrc),
-                        source: source
+                        source: 'TOONSTREAM'
                     });
-                    console.log(`📊 Found data URL: ${fullSrc}`);
+                    console.log(`📊 Found ToonStream data URL: ${fullSrc}`);
                     break;
                 }
             }
         }
     });
 
-    console.log(`🎯 Found ${players.length} unique players from ${source}`);
+    // Method 5: Look for player buttons/links
+    $('a[href*="player"], a[href*="embed"], a[href*="stream"], .player-btn, .stream-btn').each((i, el) => {
+        const href = $(el).attr('href');
+        if (href) {
+            let fullHref = href;
+            if (href.startsWith('/')) fullHref = 'https://toonstream.love' + href;
+            
+            if (isValidVideoUrl(fullHref) && !foundUrls.has(fullHref)) {
+                foundUrls.add(fullHref);
+                players.push({
+                    type: 'link',
+                    server: `ToonStream Link ${players.length + 1}`,
+                    url: fullHref,
+                    quality: 'HD',
+                    format: 'link',
+                    source: 'TOONSTREAM'
+                });
+                console.log(`🔗 Found ToonStream player link: ${fullHref}`);
+            }
+        }
+    });
+
+    console.log(`🎯 Found ${players.length} unique players from ToonStream`);
     return players;
 }
 
@@ -441,7 +463,7 @@ function isValidVideoUrl(url) {
         /\/assets\//,
         /\/css\//,
         /\/js\//,
-        /\.css/,
+        /\.css$/,
         /\.js$/,
         /\.png$/,
         /\.jpg$/,
@@ -459,7 +481,7 @@ function isValidVideoUrl(url) {
         // Video hosting domains
         'streamtape', 'doodstream', 'dood', 'mixdrop', 'mp4upload', 
         'vidstream', 'gogostream', 'embtaku', 'filemoon', 'vidcloud', 
-        'sbplay', 'fembed', 'voe', 'streamwish', 'streamhub',
+        'sbplay', 'fembed', 'voe', 'streamwish', 'streamhub', 'toonstream.love',
         
         // Video file extensions
         '.mp4', '.m3u8', '.webm', '.mkv', '.avi', '.mov', '.flv',
@@ -479,9 +501,9 @@ function getVideoFormat(url) {
     return 'auto';
 }
 
-// ========== ENHANCED EPISODE FETCHER WITH MULTIPLE SLUG ATTEMPTS ==========
-async function getEpisodeData(animeSlug, season, episode, source = 'ANIMEWORLD') {
-    const config = SOURCES[source];
+// ========== TOONSTREAM EPISODE FETCHER ==========
+async function getEpisodeData(animeSlug, season, episode) {
+    const config = SOURCES.TOONSTREAM;
     
     // Get alternative slugs if available
     const dbEntry = Object.values(ANIME_DATABASE).find(entry => 
@@ -493,52 +515,52 @@ async function getEpisodeData(animeSlug, season, episode, source = 'ANIMEWORLD')
         slugsToTry.push(...dbEntry.alternativeSlugs);
     }
     
-    console.log(`🔍 Trying ${source} with slugs: ${slugsToTry.join(', ')}, episode: ${episode}`);
+    console.log(`🔍 Trying ToonStream with slugs: ${slugsToTry.join(', ')}, episode: ${episode}`);
 
     for (const currentSlug of slugsToTry) {
-        // More URL patterns for each slug
+        // ToonStream URL patterns
         const urlAttempts = [
-            // Primary patterns
-            `${config.episodeUrl}/${currentSlug}-episode-${episode}/`,
-            `${config.episodeUrl}/${currentSlug}-episode-${episode}`,
-            `${config.baseUrl}/episode/${currentSlug}-episode-${episode}/`,
-            `${config.baseUrl}/episode/${currentSlug}-episode-${episode}`,
+            // Primary patterns for ToonStream
+            `${config.baseUrl}/${currentSlug}-episode-${episode}/`,
+            `${config.baseUrl}/${currentSlug}-episode-${episode}`,
+            `${config.baseUrl}/${currentSlug}-ep-${episode}/`,
+            `${config.baseUrl}/${currentSlug}-ep${episode}/`,
             
             // Alternative patterns
-            `${config.baseUrl}/episode/${currentSlug}-${episode}/`,
-            `${config.baseUrl}/episode/${currentSlug}-ep-${episode}/`,
             `${config.baseUrl}/watch/${currentSlug}-episode-${episode}/`,
             `${config.baseUrl}/anime/${currentSlug}/episode-${episode}/`,
+            `${config.baseUrl}/${currentSlug}/${episode}/`,
             
             // Season-specific patterns
-            `${config.episodeUrl}/${currentSlug}-season-${season}-episode-${episode}/`,
-            `${config.episodeUrl}/${currentSlug}-s${season}-e${episode}/`,
-            `${config.episodeUrl}/${currentSlug}-${season}x${episode}/`,
+            `${config.baseUrl}/${currentSlug}-season-${season}-episode-${episode}/`,
+            `${config.baseUrl}/${currentSlug}-s${season}e${episode}/`,
+            `${config.baseUrl}/${currentSlug}-${season}x${episode}/`,
             
             // Fallback patterns
-            `${config.baseUrl}/${currentSlug}-episode-${episode}/`,
-            `${config.baseUrl}/${currentSlug}-ep${episode}/`,
-            `${config.baseUrl}/${currentSlug}/${episode}/`
+            `${config.baseUrl}/${currentSlug}-${episode}/`,
+            `${config.baseUrl}/episode/${currentSlug}-${episode}/`
         ];
 
         for (const url of urlAttempts) {
             try {
-                console.log(`🌐 Attempting: ${url}`);
+                console.log(`🌐 Attempting ToonStream: ${url}`);
                 
                 const response = await axios.get(url, {
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
                         'Accept-Language': 'en-US,en;q=0.9',
-                        'Referer': config.baseUrl
+                        'Referer': config.baseUrl,
+                        'DNT': '1',
+                        'Connection': 'keep-alive'
                     },
                     timeout: 15000,
                     validateStatus: status => status < 500
                 });
 
                 if (response.status === 200) {
-                    console.log(`✅ Page loaded successfully: ${url}`);
-                    const players = extractVideoPlayers(response.data, source);
+                    console.log(`✅ ToonStream page loaded: ${url}`);
+                    const players = extractToonStreamPlayers(response.data);
                     
                     if (players.length > 0) {
                         const $ = cheerio.load(response.data);
@@ -553,54 +575,27 @@ async function getEpisodeData(animeSlug, season, episode, source = 'ANIMEWORLD')
                             description: description,
                             thumbnail: thumbnail,
                             players: players,
-                            source: source,
+                            source: 'TOONSTREAM',
                             slug_used: currentSlug
                         };
                     } else {
-                        console.log(`❌ No players found on: ${url}`);
+                        console.log(`❌ No players found on ToonStream: ${url}`);
                     }
                 } else {
-                    console.log(`❌ HTTP ${response.status} for: ${url}`);
+                    console.log(`❌ HTTP ${response.status} for ToonStream: ${url}`);
                 }
             } catch (error) {
                 if (error.response && error.response.status === 404) {
-                    console.log(`❌ 404 Not Found: ${url}`);
+                    console.log(`❌ 404 Not Found on ToonStream: ${url}`);
                 } else {
-                    console.log(`❌ Failed to load: ${url} - ${error.message}`);
+                    console.log(`❌ Failed to load ToonStream: ${url} - ${error.message}`);
                 }
                 continue;
             }
         }
     }
 
-    return { success: false, players: [], source: source };
-}
-
-// ========== MULTI-SOURCE FETCHER ==========
-async function getEpisodeMultiSource(animeSlug, season, episode) {
-    console.log(`🔍 Multi-source fetch: ${animeSlug}, S${season}, E${episode}`);
-    
-    const sources = ['ANIMEWORLD', 'BACKUP'];
-    
-    for (const source of sources) {
-        try {
-            console.log(`🔄 Trying source: ${source}`);
-            const result = await getEpisodeData(animeSlug, season, episode, source);
-            
-            if (result.success && result.players.length > 0) {
-                console.log(`✅ Success with ${source} - Found ${result.players.length} players`);
-                return result;
-            } else {
-                console.log(`❌ No players found on ${source}`);
-            }
-        } catch (error) {
-            console.log(`❌ ${source} failed:`, error.message);
-            continue;
-        }
-    }
-    
-    console.log(`❌ All sources failed for ${animeSlug} episode ${episode}`);
-    return { success: false, players: [], source: 'ALL' };
+    return { success: false, players: [], source: 'TOONSTREAM' };
 }
 
 // ========== API ENDPOINTS ==========
@@ -609,19 +604,19 @@ async function getEpisodeMultiSource(animeSlug, season, episode) {
 app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
     const { anilistId, season, episode } = req.params;
 
-    console.log(`\n🎌 Fetching: ${anilistId}, S${season}, E${episode}`);
+    console.log(`\n🎌 Fetching from ToonStream: ${anilistId}, S${season}, E${episode}`);
 
     try {
         const animeSlug = await getAnimeSlug(anilistId);
         console.log(`📝 Resolved slug: ${animeSlug} for ID: ${anilistId}`);
         
-        const episodeData = await getEpisodeMultiSource(animeSlug, parseInt(season), parseInt(episode));
+        const episodeData = await getEpisodeData(animeSlug, parseInt(season), parseInt(episode));
 
         if (!episodeData.success) {
-            console.log(`❌ Episode not found for ${animeSlug} episode ${episode}`);
+            console.log(`❌ Episode not found on ToonStream for ${animeSlug} episode ${episode}`);
             return res.status(404).json({ 
-                error: 'Episode not found on any source',
-                tried_sources: Object.keys(SOURCES),
+                error: 'Episode not found on ToonStream',
+                tried_source: 'TOONSTREAM',
                 anime_slug: animeSlug,
                 anilist_id: anilistId,
                 episode: episode,
@@ -630,7 +625,7 @@ app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
             });
         }
 
-        console.log(`✅ Successfully fetched ${episodeData.players.length} players`);
+        console.log(`✅ Successfully fetched ${episodeData.players.length} players from ToonStream`);
         res.json({
             success: true,
             anilist_id: anilistId,
@@ -642,7 +637,7 @@ app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
             description: episodeData.description,
             thumbnail: episodeData.thumbnail,
             source_url: episodeData.url,
-            source: episodeData.source,
+            source: 'TOONSTREAM',
             total_players: episodeData.players.length,
             players: episodeData.players,
             available_servers: episodeData.players.map(p => p.server),
@@ -660,61 +655,41 @@ app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
     }
 });
 
-// Enhanced search endpoint with better results
+// Enhanced search endpoint for ToonStream
 app.get('/api/search/:query', async (req, res) => {
     const { query } = req.params;
     
     try {
-        console.log(`🔍 Searching for: ${query}`);
+        console.log(`🔍 Searching ToonStream for: ${query}`);
         
-        const [animeworldResults, backupResults] = await Promise.all([
-            searchAnime(query, 'ANIMEWORLD').catch(err => {
-                console.error('AnimeWorld search failed:', err.message);
-                return [];
-            }),
-            searchAnime(query, 'BACKUP').catch(err => {
-                console.error('Backup search failed:', err.message);
-                return [];
-            })
-        ]);
-
-        // Combine and deduplicate results
-        const allResults = [...animeworldResults, ...backupResults];
-        const uniqueResults = [];
-        const seenSlugs = new Set();
+        const results = await searchAnime(query);
         
-        for (const result of allResults) {
-            if (!seenSlugs.has(result.slug)) {
-                seenSlugs.add(result.slug);
-                uniqueResults.push(result);
-            }
-        }
-        
-        console.log(`✅ Found ${uniqueResults.length} unique results for "${query}"`);
+        console.log(`✅ Found ${results.length} results for "${query}" on ToonStream`);
         
         res.json({
             success: true,
             query: query,
-            results_count: uniqueResults.length,
-            results: uniqueResults.slice(0, 20), // Limit to top 20 results
-            sources_tried: ['ANIMEWORLD', 'BACKUP'],
+            results_count: results.length,
+            results: results.slice(0, 20), // Limit to top 20 results
+            source: 'TOONSTREAM',
             timestamp: new Date().toISOString()
         });
     } catch (error) {
-        console.error('Search error:', error);
+        console.error('ToonStream search error:', error);
         res.status(500).json({ 
             error: 'Search failed', 
             message: error.message,
-            query: query
+            query: query,
+            source: 'TOONSTREAM'
         });
     }
 });
 
-// Test endpoint for any anime with detailed debugging
+// Test endpoint for any anime with ToonStream debugging
 app.get('/api/debug/:anilistId/:episode', async (req, res) => {
     const { anilistId, episode } = req.params;
     
-    console.log(`\n🔧 DEBUG: Testing anime ${anilistId} episode ${episode}`);
+    console.log(`\n🔧 DEBUG: Testing ToonStream anime ${anilistId} episode ${episode}`);
     
     try {
         const animeSlug = await getAnimeSlug(anilistId);
@@ -729,15 +704,15 @@ app.get('/api/debug/:anilistId/:episode', async (req, res) => {
         
         for (const slug of testSlugs) {
             try {
-                console.log(`🧪 Testing slug: ${slug}`);
-                const episodeData = await getEpisodeData(slug, 1, parseInt(episode), 'ANIMEWORLD');
+                console.log(`🧪 Testing ToonStream slug: ${slug}`);
+                const episodeData = await getEpisodeData(slug, 1, parseInt(episode));
                 
                 results.push({
                     slug: slug,
                     success: episodeData.success,
                     players_found: episodeData.players ? episodeData.players.length : 0,
                     url_used: episodeData.url || 'No successful URL',
-                    source: episodeData.source,
+                    source: 'TOONSTREAM',
                     title: episodeData.title || 'No title found'
                 });
                 
@@ -748,7 +723,8 @@ app.get('/api/debug/:anilistId/:episode', async (req, res) => {
                 results.push({
                     slug: slug,
                     error: error.message,
-                    success: false
+                    success: false,
+                    source: 'TOONSTREAM'
                 });
             }
         }
@@ -759,13 +735,15 @@ app.get('/api/debug/:anilistId/:episode', async (req, res) => {
             resolved_slug: animeSlug,
             database_entry: dbEntry || null,
             test_results: results,
-            total_slugs_tested: testSlugs.length
+            total_slugs_tested: testSlugs.length,
+            source: 'TOONSTREAM'
         });
     } catch (error) {
         res.status(500).json({
             anilist_id: anilistId,
             episode: episode,
             error: error.message,
+            source: 'TOONSTREAM',
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
@@ -788,25 +766,27 @@ app.get('/api/resolve/:anilistId', async (req, res) => {
             in_database: !!dbEntry,
             database_entry: dbEntry || null,
             alternative_slugs: dbEntry ? dbEntry.alternativeSlugs : [],
+            source: 'TOONSTREAM',
             timestamp: new Date().toISOString()
         });
     } catch (error) {
         res.status(500).json({
             success: false,
             anilist_id: anilistId,
-            error: error.message
+            error: error.message,
+            source: 'TOONSTREAM'
         });
     }
 });
 
-// Enhanced embed endpoint
+// Enhanced embed endpoint for ToonStream
 app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
     const { anilistId, episode, language = 'sub' } = req.params;
     const season = 1;
 
     try {
         const animeSlug = await getAnimeSlug(anilistId);
-        const episodeData = await getEpisodeMultiSource(animeSlug, season, parseInt(episode));
+        const episodeData = await getEpisodeData(animeSlug, season, parseInt(episode));
 
         if (!episodeData.success || episodeData.players.length === 0) {
             const dbEntry = ANIME_DATABASE[anilistId];
@@ -823,7 +803,7 @@ app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
                         body { 
                             margin: 0; 
                             padding: 20px; 
-                            background: linear-gradient(135deg, #1a1a1a, #2d2d2d); 
+                            background: linear-gradient(135deg, #667eea, #764ba2); 
                             color: white; 
                             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                             display: flex; 
@@ -835,15 +815,45 @@ app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
                             text-align: center;
                             background: rgba(255,255,255,0.1);
                             padding: 40px;
-                            border-radius: 15px;
-                            backdrop-filter: blur(10px);
+                            border-radius: 20px;
+                            backdrop-filter: blur(15px);
                             border: 1px solid rgba(255,255,255,0.2);
+                            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
                         }
-                        h1 { color: #ff6b6b; margin-bottom: 20px; }
-                        .info { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 10px 0; }
-                        .code { font-family: monospace; background: #333; padding: 5px 10px; border-radius: 4px; }
-                        a { color: #4ecdc4; text-decoration: none; }
-                        a:hover { text-decoration: underline; }
+                        h1 { color: #ff6b9d; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+                        .info { 
+                            background: rgba(0,0,0,0.2); 
+                            padding: 15px; 
+                            border-radius: 10px; 
+                            margin: 15px 0; 
+                            border-left: 4px solid #ff6b9d;
+                        }
+                        .code { 
+                            font-family: 'Courier New', monospace; 
+                            background: #2d3748; 
+                            color: #63b3ed;
+                            padding: 8px 12px; 
+                            border-radius: 6px; 
+                            display: inline-block;
+                        }
+                        a { 
+                            color: #63b3ed; 
+                            text-decoration: none; 
+                            font-weight: 600;
+                            transition: color 0.3s;
+                        }
+                        a:hover { 
+                            color: #90cdf4; 
+                            text-decoration: underline; 
+                        }
+                        .badge {
+                            background: #667eea;
+                            color: white;
+                            padding: 4px 8px;
+                            border-radius: 12px;
+                            font-size: 12px;
+                            font-weight: bold;
+                        }
                     </style>
                 </head>
                 <body>
@@ -853,15 +863,17 @@ app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
                             <strong>Anime:</strong> ${animeTitle}<br>
                             <strong>AniList ID:</strong> ${anilistId}<br>
                             <strong>Episode:</strong> ${episode}<br>
-                            <strong>Language:</strong> ${language}
+                            <strong>Language:</strong> ${language}<br>
+                            <span class="badge">ToonStream</span>
                         </div>
                         <div class="info">
                             <strong>Resolved Slug:</strong> <span class="code">${animeSlug}</span><br>
-                            <strong>Sources Tried:</strong> ${Object.keys(SOURCES).join(', ')}
+                            <strong>Source:</strong> ToonStream.love
                         </div>
-                        <p>Try searching for the anime first:</p>
-                        <p><a href="/api/search/${encodeURIComponent(animeTitle)}" target="_blank">🔍 Search API</a></p>
-                        <p><a href="/api/debug/${anilistId}/${episode}" target="_blank">🔧 Debug Info</a></p>
+                        <p>🔍 Try these options:</p>
+                        <p><a href="/api/search/${encodeURIComponent(animeTitle)}" target="_blank">Search ToonStream</a></p>
+                        <p><a href="/api/debug/${anilistId}/${episode}" target="_blank">Debug Episode</a></p>
+                        <p><a href="/api/resolve/${anilistId}" target="_blank">Check Slug Resolution</a></p>
                     </div>
                 </body>
                 </html>
@@ -876,24 +888,28 @@ app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>${episodeData.title}</title>
+                <title>${episodeData.title} - ToonStream</title>
                 <style>
                     body { 
                         margin: 0; 
                         padding: 0; 
                         background: #000; 
                         overflow: hidden; 
-                        font-family: Arial, sans-serif;
+                        font-family: 'Segoe UI', sans-serif;
                     }
                     .player-container { 
                         width: 100vw; 
                         height: 100vh; 
                         position: relative;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                     }
                     iframe { 
                         width: 100%; 
                         height: 100%; 
-                        border: none; 
+                        border: none;
+                        border-radius: 0;
                     }
                     .loading {
                         position: absolute;
@@ -901,43 +917,105 @@ app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
                         left: 50%;
                         transform: translate(-50%, -50%);
                         color: white;
-                        font-size: 18px;
+                        font-size: 20px;
+                        font-weight: 600;
+                        z-index: 100;
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }
+                    .spinner {
+                        width: 24px;
+                        height: 24px;
+                        border: 3px solid rgba(255,255,255,0.3);
+                        border-radius: 50%;
+                        border-top-color: #667eea;
+                        animation: spin 1s ease-in-out infinite;
+                    }
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
                     }
                     .info {
                         position: absolute;
-                        top: 10px;
-                        left: 10px;
+                        top: 15px;
+                        left: 15px;
                         background: rgba(0,0,0,0.8);
                         color: white;
-                        padding: 10px;
-                        border-radius: 5px;
-                        font-size: 12px;
-                        max-width: 300px;
+                        padding: 12px 15px;
+                        border-radius: 8px;
+                        font-size: 13px;
+                        max-width: 320px;
                         opacity: 0;
-                        transition: opacity 0.3s;
+                        transition: opacity 0.3s ease;
+                        backdrop-filter: blur(10px);
+                        border: 1px solid rgba(255,255,255,0.1);
                     }
                     .info:hover {
                         opacity: 1;
+                    }
+                    .player-controls {
+                        position: absolute;
+                        bottom: 20px;
+                        right: 20px;
+                        display: flex;
+                        gap: 10px;
+                        opacity: 0;
+                        transition: opacity 0.3s ease;
+                    }
+                    .player-controls:hover {
+                        opacity: 1;
+                    }
+                    .control-btn {
+                        background: rgba(0,0,0,0.7);
+                        color: white;
+                        border: none;
+                        padding: 8px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 12px;
+                        transition: background 0.3s;
+                    }
+                    .control-btn:hover {
+                        background: rgba(102, 126, 234, 0.8);
                     }
                 </style>
             </head>
             <body>
                 <div class="player-container">
-                    <div class="loading">Loading episode...</div>
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading from ToonStream...
+                    </div>
                     <div class="info">
-                        ${episodeData.title}<br>
-                        Source: ${episodeData.source}<br>
-                        Players: ${episodeData.players.length}
+                        📺 <strong>${episodeData.title}</strong><br>
+                        🌐 Source: ToonStream.love<br>
+                        🎬 Players: ${episodeData.players.length}<br>
+                        ⭐ Quality: HD
+                    </div>
+                    <div class="player-controls">
+                        <button class="control-btn" onclick="document.querySelector('iframe').requestFullscreen()">
+                            ⛶ Fullscreen
+                        </button>
                     </div>
                     <iframe 
                         src="${playerUrl}" 
                         frameborder="0" 
                         scrolling="no" 
                         allowfullscreen
-                        allow="autoplay; fullscreen; picture-in-picture"
-                        onload="document.querySelector('.loading').style.display='none'">
+                        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                        onload="document.querySelector('.loading').style.display='none'"
+                        onerror="document.querySelector('.loading').innerHTML='❌ Failed to load player'">
                     </iframe>
                 </div>
+                <script>
+                    // Auto-hide loading after 10 seconds
+                    setTimeout(() => {
+                        const loading = document.querySelector('.loading');
+                        if (loading && loading.style.display !== 'none') {
+                            loading.innerHTML = '⚠️ Player taking longer than expected...';
+                        }
+                    }, 10000);
+                </script>
             </body>
             </html>
         `);
@@ -956,7 +1034,7 @@ app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
                         padding: 20px; 
                         background: linear-gradient(135deg, #ff6b6b, #ee5a52); 
                         color: white; 
-                        font-family: Arial, sans-serif;
+                        font-family: 'Segoe UI', sans-serif;
                         display: flex; 
                         align-items: center; 
                         justify-content: center; 
@@ -965,19 +1043,32 @@ app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
                     .container {
                         text-align: center;
                         background: rgba(0,0,0,0.3);
-                        padding: 40px;
-                        border-radius: 15px;
-                        backdrop-filter: blur(10px);
+                        padding: 50px;
+                        border-radius: 20px;
+                        backdrop-filter: blur(15px);
+                        border: 1px solid rgba(255,255,255,0.2);
                     }
-                    .code { font-family: monospace; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 4px; }
+                    .code { 
+                        font-family: 'Courier New', monospace; 
+                        background: rgba(0,0,0,0.5); 
+                        padding: 8px 12px; 
+                        border-radius: 6px; 
+                        color: #ffeb3b;
+                        display: inline-block;
+                        margin: 5px;
+                    }
+                    h1 { text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <h1>💥 Error Loading Anime</h1>
-                    <p><strong>Anime ID:</strong> ${anilistId}</p>
-                    <p><strong>Episode:</strong> ${episode}</p>
+                    <p><strong>Anime ID:</strong> <span class="code">${anilistId}</span></p>
+                    <p><strong>Episode:</strong> <span class="code">${episode}</span></p>
+                    <p><strong>Source:</strong> <span class="code">ToonStream.love</span></p>
                     <p><strong>Error:</strong> <span class="code">${error.message}</span></p>
+                    <br>
+                    <p>🔄 Try refreshing the page or contact support</p>
                 </div>
             </body>
             </html>
@@ -985,7 +1076,7 @@ app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
     }
 });
 
-// Database endpoint with more info
+// Database endpoint with ToonStream info
 app.get('/api/database', (req, res) => {
     const stats = {
         total_anime: Object.keys(ANIME_DATABASE).length,
@@ -999,14 +1090,15 @@ app.get('/api/database', (req, res) => {
     
     res.json({
         success: true,
+        source: 'TOONSTREAM',
         stats: stats,
         anime_list: ANIME_DATABASE,
-        sources: SOURCES,
+        source_config: SOURCES.TOONSTREAM,
         timestamp: new Date().toISOString()
     });
 });
 
-// API documentation endpoint
+// API documentation endpoint for ToonStream
 app.get('/docs', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -1014,49 +1106,141 @@ app.get('/docs', (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>AnimeWorld API Documentation</title>
+            <title>ToonStream API Documentation</title>
             <style>
-                body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-                .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 20px rgba(0,0,0,0.1); }
-                h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
-                h2 { color: #34495e; margin-top: 30px; }
-                .endpoint { background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #3498db; }
-                .method { display: inline-block; padding: 4px 8px; border-radius: 3px; font-weight: bold; color: white; }
-                .get { background: #27ae60; }
-                .post { background: #e74c3c; }
-                code { background: #34495e; color: white; padding: 2px 6px; border-radius: 3px; }
-                pre { background: #2c3e50; color: white; padding: 15px; border-radius: 5px; overflow-x: auto; }
-                .example { background: #d5dbdb; padding: 10px; border-radius: 3px; margin: 5px 0; }
+                body { 
+                    font-family: 'Segoe UI', sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    min-height: 100vh;
+                }
+                .container { 
+                    max-width: 1200px; 
+                    margin: 0 auto; 
+                    background: white; 
+                    padding: 40px; 
+                    border-radius: 20px; 
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+                }
+                h1 { 
+                    color: #2d3748; 
+                    border-bottom: 4px solid #667eea; 
+                    padding-bottom: 15px;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                }
+                h2 { color: #4a5568; margin-top: 40px; }
+                .endpoint { 
+                    background: #f7fafc; 
+                    padding: 20px; 
+                    border-radius: 10px; 
+                    margin: 15px 0; 
+                    border-left: 6px solid #667eea;
+                    transition: transform 0.2s;
+                }
+                .endpoint:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+                }
+                .method { 
+                    display: inline-block; 
+                    padding: 6px 12px; 
+                    border-radius: 6px; 
+                    font-weight: bold; 
+                    color: white; 
+                    margin-right: 10px;
+                }
+                .get { background: linear-gradient(135deg, #38a169, #48bb78); }
+                .post { background: linear-gradient(135deg, #e53e3e, #f56565); }
+                code { 
+                    background: #2d3748; 
+                    color: #63b3ed; 
+                    padding: 4px 8px; 
+                    border-radius: 6px; 
+                    font-family: 'Courier New', monospace;
+                }
+                pre { 
+                    background: #2d3748; 
+                    color: #e2e8f0; 
+                    padding: 20px; 
+                    border-radius: 10px; 
+                    overflow-x: auto;
+                    border-left: 4px solid #667eea;
+                }
+                .example { 
+                    background: #edf2f7; 
+                    padding: 15px; 
+                    border-radius: 8px; 
+                    margin: 10px 0;
+                    border: 1px solid #e2e8f0;
+                }
+                .badge {
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 12px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    display: inline-block;
+                    margin-left: 10px;
+                }
+                .feature-list {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: 20px;
+                    margin: 20px 0;
+                }
+                .feature-card {
+                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+                    padding: 20px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(102, 126, 234, 0.2);
+                }
+                a {
+                    color: #667eea;
+                    text-decoration: none;
+                    font-weight: 600;
+                }
+                a:hover {
+                    color: #764ba2;
+                    text-decoration: underline;
+                }
             </style>
         </head>
         <body>
             <div class="container">
-                <h1>📺 AnimeWorld API Documentation</h1>
-                <p>A comprehensive API for fetching anime episodes from multiple sources with improved slug resolution.</p>
+                <h1>📺 ToonStream API Documentation</h1>
+                <p>A comprehensive API for fetching anime episodes from ToonStream.love with enhanced player extraction and slug resolution. <span class="badge">v2.0 - ToonStream Edition</span></p>
                 
                 <h2>🚀 Main Endpoints</h2>
                 
                 <div class="endpoint">
                     <span class="method get">GET</span> <code>/api/anime/:anilistId/:season/:episode</code>
-                    <p>Fetch anime episode with video players</p>
+                    <p>Fetch anime episode with video players from ToonStream</p>
                     <div class="example">
-                        <strong>Example:</strong> <code>/api/anime/21/1/1</code> (One Piece Episode 1)
+                        <strong>Example:</strong> <code>/api/anime/178025/1/1</code> (Kaiju No. 8 Episode 1)<br>
+                        <strong>Response:</strong> JSON with player URLs, episode info, and metadata
                     </div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method get">GET</span> <code>/api/search/:query</code>
-                    <p>Search for anime across all sources</p>
+                    <p>Search for anime on ToonStream</p>
                     <div class="example">
-                        <strong>Example:</strong> <code>/api/search/naruto</code>
+                        <strong>Example:</strong> <code>/api/search/kaiju no 8</code><br>
+                        <strong>Returns:</strong> List of matching anime with slugs and metadata
                     </div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method get">GET</span> <code>/api/resolve/:anilistId</code>
-                    <p>Resolve AniList ID to anime slug</p>
+                    <p>Resolve AniList ID to ToonStream-compatible slug</p>
                     <div class="example">
-                        <strong>Example:</strong> <code>/api/resolve/104</code> (Get Bleach slug)
+                        <strong>Example:</strong> <code>/api/resolve/178025</code><br>
+                        <strong>Returns:</strong> Slug resolution info and alternatives
                     </div>
                 </div>
                 
@@ -1064,78 +1248,97 @@ app.get('/docs', (req, res) => {
                 
                 <div class="endpoint">
                     <span class="method get">GET</span> <code>/api/debug/:anilistId/:episode</code>
-                    <p>Debug episode fetching with detailed information</p>
+                    <p>Debug episode fetching with detailed ToonStream analysis</p>
+                    <div class="example">
+                        <strong>Example:</strong> <code>/api/debug/178025/1</code><br>
+                        <strong>Returns:</strong> Detailed testing results for all slug variations
+                    </div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method get">GET</span> <code>/api/database</code>
-                    <p>View complete anime database with statistics</p>
+                    <p>View complete anime database optimized for ToonStream</p>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method get">GET</span> <code>/health</code>
-                    <p>API health check and status</p>
+                    <p>API health check and ToonStream connectivity status</p>
                 </div>
                 
                 <h2>🎬 Embed Player</h2>
                 
                 <div class="endpoint">
                     <span class="method get">GET</span> <code>/anime/:anilistId/:episode/:language?</code>
-                    <p>Direct embed player for anime episodes</p>
+                    <p>Direct embed player for anime episodes from ToonStream</p>
                     <div class="example">
-                        <strong>Example:</strong> <code>/anime/21/1/sub</code> (One Piece Episode 1 with subtitles)
+                        <strong>Example:</strong> <code>/anime/178025/1/sub</code><br>
+                        <strong>Returns:</strong> Full-screen HTML player with ToonStream video
                     </div>
                 </div>
                 
-                <h2>📊 Features</h2>
-                <ul>
-                    <li>✅ Improved slug resolution with AniList API integration</li>
-                    <li>✅ Multiple alternative slug attempts per anime</li>
-                    <li>✅ Enhanced video player extraction</li>
-                    <li>✅ Multi-source support with fallback</li>
-                    <li>✅ Comprehensive search functionality</li>
-                    <li>✅ Detailed debugging and error reporting</li>
-                    <li>✅ Database of ${Object.keys(ANIME_DATABASE).length}+ anime with verified slugs</li>
-                </ul>
+                <h2>✨ ToonStream Features</h2>
+                <div class="feature-list">
+                    <div class="feature-card">
+                        <h3>🎯 Enhanced Player Extraction</h3>
+                        <p>Advanced iframe, script, and data attribute analysis specifically optimized for ToonStream's player structure</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔍 Smart Slug Resolution</h3>
+                        <p>AniList API integration with multiple slug alternatives for maximum compatibility</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🌐 ToonStream Optimized</h3>
+                        <p>URL patterns and extraction methods specifically designed for ToonStream.love infrastructure</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📊 Comprehensive Database</h3>
+                        <p>${Object.keys(ANIME_DATABASE).length}+ anime with verified ToonStream-compatible slugs and alternatives</p>
+                    </div>
+                </div>
                 
                 <h2>🎯 Popular Anime Examples</h2>
-                <ul>
-                    <li><a href="/api/anime/21/1/1" target="_blank">One Piece</a> - ID: 21</li>
-                    <li><a href="/api/anime/20/1/1" target="_blank">Naruto</a> - ID: 20</li>
-                    <li><a href="/api/anime/104/1/1" target="_blank">Bleach</a> - ID: 104</li>
-                    <li><a href="/api/anime/16498/1/1" target="_blank">Attack on Titan</a> - ID: 16498</li>
-                    <li><a href="/api/anime/38000/1/1" target="_blank">Demon Slayer</a> - ID: 38000</li>
-                </ul>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                    <a href="/api/anime/178025/1/1" target="_blank" style="display: block; background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">📺 Kaiju No. 8</a>
+                    <a href="/api/anime/21/1/1" target="_blank" style="display: block; background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">🏴‍☠️ One Piece</a>
+                    <a href="/api/anime/20/1/1" target="_blank" style="display: block; background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">🍥 Naruto</a>
+                    <a href="/api/anime/38000/1/1" target="_blank" style="display: block; background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">⚔️ Demon Slayer</a>
+                </div>
                 
                 <h2>📝 Response Format</h2>
                 <pre>{
   "success": true,
-  "anilist_id": "21",
-  "anime_slug": "one-piece",
-  "slug_used": "one-piece",
+  "anilist_id": "178025",
+  "anime_slug": "kaiju-no-8",
+  "slug_used": "kaiju-no-8",
   "season": 1,
   "episode": 1,
-  "title": "One Piece Episode 1",
+  "title": "Kaiju No. 8 Episode 1",
+  "source": "TOONSTREAM",
   "players": [
     {
       "type": "embed",
-      "server": "AnimeWorld Server 1",
+      "server": "ToonStream Server 1",
       "url": "https://...",
       "quality": "HD",
       "format": "iframe",
-      "source": "ANIMEWORLD"
+      "source": "TOONSTREAM"
     }
   ],
   "total_players": 3,
-  "source": "ANIMEWORLD"
+  "source_url": "https://toonstream.love/kaiju-no-8-episode-1/"
 }</pre>
+
+                <div style="margin-top: 40px; padding: 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 12px; text-align: center;">
+                    <h3>🚀 Powered by ToonStream.love</h3>
+                    <p>This API provides seamless access to ToonStream's extensive anime library with enhanced player extraction and smart slug resolution.</p>
+                </div>
             </div>
         </body>
         </html>
     `);
 });
 
-// Health check with detailed info
+// Health check with ToonStream status
 app.get('/health', (req, res) => {
     const uptime = process.uptime();
     const hours = Math.floor(uptime / 3600);
@@ -1144,23 +1347,32 @@ app.get('/health', (req, res) => {
     
     res.json({ 
         status: 'OK',
-        message: 'AnimeWorld API is running',
-        version: '2.0.0',
+        message: 'ToonStream API is running',
+        version: '2.0.0 - ToonStream Edition',
         uptime: `${hours}h ${minutes}m ${seconds}s`,
+        source: 'TOONSTREAM',
+        target_website: 'https://toonstream.love',
         features: {
-            improved_slug_resolution: true,
+            toonstream_optimized: true,
             anilist_integration: true,
-            multi_source_support: true,
-            alternative_slugs: true,
-            enhanced_player_extraction: true
+            enhanced_player_extraction: true,
+            alternative_slug_support: true,
+            comprehensive_search: true
         },
         database: {
             total_anime: Object.keys(ANIME_DATABASE).length,
             anime_with_alternatives: Object.values(ANIME_DATABASE).filter(entry => 
                 entry.alternativeSlugs && entry.alternativeSlugs.length > 0
-            ).length
+            ).length,
+            featured_anime: ['kaiju-no-8', 'one-piece', 'naruto', 'demon-slayer']
         },
-        sources: Object.keys(SOURCES),
+        endpoints: {
+            main: '/api/anime/:anilistId/:season/:episode',
+            search: '/api/search/:query',
+            debug: '/api/debug/:anilistId/:episode',
+            embed: '/anime/:anilistId/:episode/:language',
+            docs: '/docs'
+        },
         timestamp: new Date().toISOString()
     });
 });
@@ -1170,6 +1382,7 @@ app.use((req, res) => {
     res.status(404).json({
         error: 'Endpoint not found',
         path: req.path,
+        source: 'TOONSTREAM',
         available_endpoints: [
             '/api/anime/:anilistId/:season/:episode',
             '/api/search/:query',
@@ -1179,6 +1392,11 @@ app.use((req, res) => {
             '/anime/:anilistId/:episode/:language',
             '/docs',
             '/health'
+        ],
+        examples: [
+            '/api/anime/178025/1/1 (Kaiju No. 8)',
+            '/api/search/demon slayer',
+            '/api/debug/21/1 (One Piece debug)'
         ]
     });
 });
@@ -1189,29 +1407,39 @@ app.use((error, req, res, next) => {
     res.status(500).json({
         error: 'Internal server error',
         message: error.message,
+        source: 'TOONSTREAM',
         timestamp: new Date().toISOString()
     });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Enhanced AnimeWorld API v2.0 running on port ${PORT}`);
-    console.log(`📊 Database loaded: ${Object.keys(ANIME_DATABASE).length} anime with improved slug resolution`);
-    console.log(`🌐 Sources: ${Object.keys(SOURCES).join(', ')}`);
+    console.log(`\n🚀 ToonStream API v2.0 running on port ${PORT}`);
+    console.log(`🎯 Target: ToonStream.love`);
+    console.log(`📊 Database: ${Object.keys(ANIME_DATABASE).length} anime with ToonStream optimization`);
+    console.log(`🌐 Source: ToonStream (replacing AnimeWorld)`);
     console.log(`📖 Documentation: http://localhost:${PORT}/docs`);
     console.log(`🗃️ Database: http://localhost:${PORT}/api/database`);
-    console.log(`🎌 Test URLs:`);
+    console.log(`\n🎌 Test URLs (ToonStream):`);
+    console.log(`   - Kaiju No. 8: http://localhost:${PORT}/api/anime/178025/1/1`);
     console.log(`   - One Piece: http://localhost:${PORT}/api/anime/21/1/1`);
-    console.log(`   - Bleach: http://localhost:${PORT}/api/anime/104/1/1`);
     console.log(`   - Naruto: http://localhost:${PORT}/api/anime/20/1/1`);
-    console.log(`   - Debug Bleach: http://localhost:${PORT}/api/debug/104/1`);
-    console.log(`   - Search: http://localhost:${PORT}/api/search/one piece`);
-    console.log(`🔧 New Features:`);
+    console.log(`   - Demon Slayer: http://localhost:${PORT}/api/anime/38000/1/1`);
+    console.log(`\n🔧 Debug & Utility:`);
+    console.log(`   - Debug Kaiju No. 8: http://localhost:${PORT}/api/debug/178025/1`);
+    console.log(`   - Search: http://localhost:${PORT}/api/search/kaiju no 8`);
+    console.log(`   - Resolve: http://localhost:${PORT}/api/resolve/178025`);
+    console.log(`\n✨ ToonStream Features:`);
+    console.log(`   ✅ Enhanced player extraction for ToonStream`);
     console.log(`   ✅ AniList API integration for unknown anime`);
     console.log(`   ✅ Multiple alternative slugs per anime`);
-    console.log(`   ✅ Enhanced URL pattern matching`);
-    console.log(`   ✅ Better error handling and debugging`);
-    console.log(`   ✅ Improved video player extraction`);
+    console.log(`   ✅ ToonStream-specific URL patterns`);
+    console.log(`   ✅ Improved error handling and debugging`);
+    console.log(`   ✅ Optimized video player detection`);
+    console.log(`\n🎬 Embed Players:`);
+    console.log(`   - http://localhost:${PORT}/anime/178025/1/sub`);
+    console.log(`   - http://localhost:${PORT}/anime/21/1000/sub`);
+    console.log(`\n🌟 Ready to fetch anime from ToonStream.love!`);
 });
 
 module.exports = app;
