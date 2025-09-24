@@ -3,6 +3,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const path = require('path');
 const fs = require('fs');
+const urlModule = require('url');
 
 const app = express();
 
@@ -17,10 +18,10 @@ app.use((req, res, next) => {
 app.use(express.static('public'));
 
 // ========== CACHE CONFIG ==========
-const CACHE_FILE = 'slug_cache.json';
-let slugCache = {};
+const CACHE_FILE = 'anime_cache.json';
+let animeCache = {};
 if (fs.existsSync(CACHE_FILE)) {
-    slugCache = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+    animeCache = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
 }
 
 // ========== SOURCE CONFIGURATION ==========
@@ -29,19 +30,22 @@ const SOURCES = {
         name: 'AnimeWorld',
         baseUrl: 'https://watchanimeworld.in',
         searchUrl: 'https://watchanimeworld.in/?s=',
-        episodeUrl: 'https://watchanimeworld.in/episode'
+        episodeUrl: 'https://watchanimeworld.in/episode',
+        animePath: '/series'
     },
     BACKUP: {
         name: 'Backup Source',
         baseUrl: 'https://animeworld-india.me',
         searchUrl: 'https://animeworld-india.me/?s=',
-        episodeUrl: 'https://animeworld-india.me/episode'
+        episodeUrl: 'https://animeworld-india.me/episode',
+        animePath: '/series'
     },
     TOONSTREAM: {
         name: 'ToonStream',
         baseUrl: 'https://toonstream.love',
         searchUrl: 'https://toonstream.love/search/',
-        episodeUrl: 'https://toonstream.love/episode'
+        episodeUrl: 'https://toonstream.love/episode',
+        animePath: '/series'
     }
 };
 
@@ -92,21 +96,23 @@ async function getAnimeTitle(anilistId) {
     }
 }
 
-// ========== ANIME SLUG RESOLVER ==========
-async function getAnimeSlug(anilistId, source) {
+// ========== ANIME INFO RESOLVER ==========
+async function getAnimeInfo(anilistId, source) {
     const key = `${anilistId}_${source}`;
-    if (slugCache[key]) {
-        return slugCache[key];
+    if (animeCache[key]) {
+        return animeCache[key];
     }
+    
+    let info = {};
     
     // If we have a mapping, use it
     if (ANIME_MAPPINGS[anilistId]) {
-        slugCache[key] = ANIME_MAPPINGS[anilistId];
-        fs.writeFileSync(CACHE_FILE, JSON.stringify(slugCache));
-        return slugCache[key];
+        info.slug = ANIME_MAPPINGS[anilistId];
+        const config = SOURCES[source];
+        info.seriesUrl = `${config.baseUrl}${config.animePath}/${info.slug}/`;
     }
     
-    // Fetch title from Anilist and search
+    // Fetch title from Anilist and search if not found or to verify
     const title = await getAnimeTitle(anilistId);
     if (!title) {
         return null;
@@ -115,12 +121,17 @@ async function getAnimeSlug(anilistId, source) {
     try {
         const searchResults = await searchAnime(title, source);
         if (searchResults.length > 0) {
-            slugCache[key] = searchResults[0].slug;
-            fs.writeFileSync(CACHE_FILE, JSON.stringify(slugCache));
-            return slugCache[key];
+            info.slug = searchResults[0].slug;
+            info.seriesUrl = searchResults[0].url;
         }
     } catch (error) {
         console.error('Error searching for anime:', error);
+    }
+    
+    if (info.seriesUrl) {
+        animeCache[key] = info;
+        fs.writeFileSync(CACHE_FILE, JSON.stringify(animeCache));
+        return info;
     }
     
     return null;
@@ -143,7 +154,6 @@ async function searchAnime(query, source = 'ANIMEWORLD') {
         const $ = cheerio.load(response.data);
         const results = [];
 
-        // More general selector
         $('a[href*="/series/"], a[href*="/anime/"]').each((i, el) => {
             const a = $(el);
             const url = a.attr('href');
@@ -172,6 +182,67 @@ async function searchAnime(query, source = 'ANIMEWORLD') {
         console.error(`Search error (${source}):`, error.message);
         return [];
     }
+}
+
+// ========== FIND EPISODE URL FROM SERIES PAGE ==========
+async function findEpisodeUrl(seriesUrl, season, episode, source) {
+    let currentUrl = seriesUrl;
+    let pageCount = 0;
+    const maxPages = 10; // Limit to prevent infinite loop
+
+    while (currentUrl && pageCount < maxPages) {
+        try {
+            console.log(`🌐 Fetching series page: ${currentUrl}`);
+            const response = await axios.get(currentUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Referer': SOURCES[source].baseUrl
+                },
+                timeout: 10000
+            });
+
+            const $ = cheerio.load(response.data);
+
+            // Patterns to match episode text
+            const patterns = [
+                `episode ${episode}`,
+                `ep ${episode}`,
+                `ep. ${episode}`,
+                `${season}x${episode}`,
+                `s${season} e${episode}`,
+                `season ${season} episode ${episode}`
+            ];
+
+            let episodeHref = null;
+            $('a').each((i, el) => {
+                if (episodeHref) return;
+                const text = $(el).text().trim().toLowerCase();
+                if (patterns.some(p => text.includes(p.toLowerCase()))) {
+                    episodeHref = $(el).attr('href');
+                }
+            });
+
+            if (episodeHref) {
+                return episodeHref.startsWith('http') ? episodeHref : new urlModule.URL(episodeHref, currentUrl).href;
+            }
+
+            // Find next page link
+            const nextLink = $('a.next, .next-page, a[rel="next"]').attr('href');
+            if (nextLink) {
+                currentUrl = nextLink.startsWith('http') ? nextLink : new urlModule.URL(nextLink, currentUrl).href;
+            } else {
+                currentUrl = null;
+            }
+
+            pageCount++;
+        } catch (error) {
+            console.log(`❌ Series page fetch failed: ${currentUrl}`);
+            return null;
+        }
+    }
+
+    return null;
 }
 
 // ========== PLAYER EXTRACTION ==========
@@ -248,53 +319,74 @@ function extractVideoPlayers(html, source) {
 
     console.log(`🎯 Found ${players.length} players from ${source}`);
     
-    // Only return the first player as per instructions
+    // Only return the first player
     return players.length > 0 ? [players[0]] : [];
 }
 
 // ========== EPISODE FETCHER ==========
-async function getEpisodeData(animeSlug, season, episode, source = 'ANIMEWORLD') {
+async function getEpisodeData(animeInfo, season, episode, source) {
+    const { seriesUrl, slug } = animeInfo;
     const config = SOURCES[source];
     
-    const urlAttempts = [
-        `${config.episodeUrl}/${animeSlug}-episode-${episode}/`,
-        `${config.episodeUrl}/${animeSlug}-${season}x${episode}/`,
-        `${config.episodeUrl}/${animeSlug}-${episode}/`,
-        `${config.episodeUrl}/${animeSlug}-season-${season}-episode-${episode}/`
-    ];
+    // First, try to find the exact episode URL from series page
+    let episodeUrl = await findEpisodeUrl(seriesUrl, season, episode, source);
+    
+    if (!episodeUrl) {
+        // Fallback to guessing if not found
+        console.log(`⚠️ Episode URL not found in series page, falling back to guesses`);
+        const urlAttempts = [
+            `${config.episodeUrl}/${slug}-episode-${episode}/`,
+            `${config.episodeUrl}/${slug}-${season}x${episode}/`,
+            `${config.episodeUrl}/${slug}-${episode}/`,
+            `${config.episodeUrl}/${slug}-season-${season}-episode-${episode}/`
+        ];
 
-    for (const url of urlAttempts) {
-        try {
-            console.log(`🌐 Trying ${source}: ${url}`);
-            const response = await axios.get(url, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Referer': config.baseUrl
-                },
-                timeout: 10000
-            });
-
-            if (response.status === 200) {
-                const players = extractVideoPlayers(response.data, source);
-                
-                if (players.length > 0) {
-                    const $ = cheerio.load(response.data);
-                    return {
-                        success: true,
-                        url: url,
-                        title: $('h1.entry-title, h1, h2').text().trim() || `Episode ${episode}`,
-                        description: $('div.entry-content p, .description').first().text().trim() || '',
-                        thumbnail: $('.post-thumbnail img, img').attr('src') || '',
-                        players: players,
-                        source: source
-                    };
+        for (const attemptUrl of urlAttempts) {
+            try {
+                const response = await axios.head(attemptUrl, { timeout: 5000 });
+                if (response.status === 200) {
+                    episodeUrl = attemptUrl;
+                    break;
                 }
+            } catch (error) {
+                // Continue to next
             }
-        } catch (error) {
-            console.log(`❌ ${source} failed: ${url}`);
-            continue;
         }
+    }
+
+    if (!episodeUrl) {
+        return { success: false, players: [], source: source };
+    }
+
+    try {
+        console.log(`🌐 Fetching episode: ${episodeUrl}`);
+        const response = await axios.get(episodeUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Referer': config.baseUrl
+            },
+            timeout: 10000
+        });
+
+        if (response.status === 200) {
+            const players = extractVideoPlayers(response.data, source);
+            
+            if (players.length > 0) {
+                const $ = cheerio.load(response.data);
+                return {
+                    success: true,
+                    url: episodeUrl,
+                    title: $('h1.entry-title, h1, h2').text().trim() || `Episode ${episode}`,
+                    description: $('div.entry-content p, .description').first().text().trim() || '',
+                    thumbnail: $('.post-thumbnail img, img').attr('src') || '',
+                    players: players,
+                    source: source
+                };
+            }
+        }
+    } catch (error) {
+        console.log(`❌ Episode fetch failed: ${episodeUrl}`);
     }
 
     return { success: false, players: [], source: source };
@@ -308,11 +400,11 @@ async function getEpisodeMultiSource(anilistId, season, episode) {
     
     const promises = sources.map(async (source) => {
         try {
-            const slug = await getAnimeSlug(anilistId, source);
-            if (!slug) {
+            const animeInfo = await getAnimeInfo(anilistId, source);
+            if (!animeInfo) {
                 return { success: false, source };
             }
-            return await getEpisodeData(slug, season, episode, source);
+            return await getEpisodeData(animeInfo, season, episode, source);
         } catch (error) {
             return { success: false, source };
         }
@@ -351,11 +443,22 @@ async function searchAnilistAnime(query) {
         `;
         const variables = { search: query };
         const response = await axios.post('https://graphql.anilist.co', { query: graphqlQuery, variables });
-        return response.data.data.Page.media.map(m => ({
-            id: m.id,
-            title: m.title.english || m.title.romaji,
-            image: m.coverImage.medium
-        }));
+        const media = response.data.data.Page.media;
+        // Remove duplicates by title
+        const unique = [];
+        const seen = new Set();
+        media.forEach(m => {
+            const title = m.title.english || m.title.romaji;
+            if (!seen.has(title)) {
+                seen.add(title);
+                unique.push({
+                    id: m.id,
+                    title: title,
+                    image: m.coverImage.medium
+                });
+            }
+        });
+        return unique;
     } catch (error) {
         console.error('Anilist search error:', error);
         return [];
