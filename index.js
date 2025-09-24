@@ -28,13 +28,53 @@ const SOURCES = {
         baseUrl: 'https://animeworld-india.me',
         searchUrl: 'https://animeworld-india.me/?s=',
         episodeUrl: 'https://animeworld-india.me/episode'
-    },
-    VIDAPI: {
-        name: 'VidAPI',
-        baseUrl: 'https://vidapi.choicesandconsequences.workers.dev',
-        apiUrl: 'https://vidapi.choicesandconsequences.workers.dev/anime'
     }
 };
+
+// ========== ANIME MAPPINGS ==========
+const ANIME_MAPPINGS = {
+    '21': 'one-piece',
+    '20': 'naruto', 
+    '1735': 'naruto-shippuden',
+    '16498': 'shingeki-no-kyojin',
+    '38000': 'demon-slayer-kimetsu-no-yaiba',
+    '113415': 'jujutsu-kaisen',
+    '99147': 'chainsaw-man',
+    '30015': 'kaguya-sama-love-is-war',
+    '101759': 'oshi-no-ko',
+    '108632': 'frieren-beyond-journeys-end',
+    '99263': 'solo-leveling',
+    '136': 'pokemon',
+    '1535': 'death-note',
+    '1': 'cowboy-bebop',
+    '44': 'hunter-x-hunter',
+    '104': 'bleach',
+    '11757': 'fairy-tail',
+    '23283': 'sword-art-online',
+    '11061': 'tokyo-ghoul',
+    '456': 'fullmetal-alchemist-brotherhood'
+};
+
+// ========== ANIME SLUG RESOLVER ==========
+async function getAnimeSlug(anilistId) {
+    // If we have a mapping, use it
+    if (ANIME_MAPPINGS[anilistId]) {
+        return ANIME_MAPPINGS[anilistId];
+    }
+    
+    // Otherwise, try to search for the anime by name
+    try {
+        const searchResults = await searchAnime(anilistId, 'ANIMEWORLD');
+        if (searchResults.length > 0) {
+            return searchResults[0].slug;
+        }
+    } catch (error) {
+        console.error('Error searching for anime:', error);
+    }
+    
+    // Fallback
+    return `anime-${anilistId}`;
+}
 
 // ========== ANIME SEARCH FUNCTION ==========
 async function searchAnime(query, source = 'ANIMEWORLD') {
@@ -77,29 +117,6 @@ async function searchAnime(query, source = 'ANIMEWORLD') {
         return results;
     } catch (error) {
         console.error(`Search error (${source}):`, error.message);
-        return [];
-    }
-}
-
-// ========== VIDAPI SOURCE ==========
-async function searchVidAPI(query) {
-    try {
-        const response = await axios.get(`${SOURCES.VIDAPI.apiUrl}/${encodeURIComponent(query)}`, {
-            timeout: 10000
-        });
-
-        if (response.data && response.data.results) {
-            return response.data.results.map(anime => ({
-                title: anime.title,
-                slug: anime.id,
-                image: anime.image,
-                description: anime.description,
-                source: 'VIDAPI'
-            }));
-        }
-        return [];
-    } catch (error) {
-        console.error('VidAPI search error:', error.message);
         return [];
     }
 }
@@ -228,54 +245,16 @@ async function getEpisodeData(animeSlug, season, episode, source = 'ANIMEWORLD')
     return { success: false, players: [], source: source };
 }
 
-// ========== VIDAPI EPISODE FETCHER ==========
-async function getVidAPIEpisode(animeId, episode) {
-    try {
-        const response = await axios.get(`${SOURCES.VIDAPI.apiUrl}/${animeId}/${episode}`, {
-            timeout: 10000
-        });
-
-        if (response.data && response.data.sources) {
-            const players = response.data.sources.map((source, index) => ({
-                type: 'embed',
-                server: `VidAPI Server ${index + 1}`,
-                url: source.url,
-                quality: source.quality || 'HD',
-                format: 'iframe',
-                source: 'VIDAPI'
-            }));
-
-            return {
-                success: true,
-                url: `${SOURCES.VIDAPI.apiUrl}/${animeId}/${episode}`,
-                title: `Episode ${episode}`,
-                players: players,
-                source: 'VIDAPI'
-            };
-        }
-    } catch (error) {
-        console.error('VidAPI episode error:', error.message);
-    }
-
-    return { success: false, players: [], source: 'VIDAPI' };
-}
-
 // ========== MULTI-SOURCE FETCHER ==========
 async function getEpisodeMultiSource(animeSlug, season, episode) {
     console.log(`🔍 Multi-source fetch: ${animeSlug}, S${season}, E${episode}`);
     
     // Try sources in order
-    const sources = ['ANIMEWORLD', 'BACKUP', 'VIDAPI'];
+    const sources = ['ANIMEWORLD', 'BACKUP'];
     
     for (const source of sources) {
         try {
-            let result;
-            
-            if (source === 'VIDAPI') {
-                result = await getVidAPIEpisode(animeSlug, episode);
-            } else {
-                result = await getEpisodeData(animeSlug, season, episode, source);
-            }
+            const result = await getEpisodeData(animeSlug, season, episode, source);
             
             if (result.success && result.players.length > 0) {
                 console.log(`✅ Success with ${source}`);
@@ -293,24 +272,27 @@ async function getEpisodeMultiSource(animeSlug, season, episode) {
 // ========== API ENDPOINTS ==========
 
 // Main anime endpoint
-app.get('/api/anime/:animeId/:season/:episode', async (req, res) => {
-    const { animeId, season, episode } = req.params;
+app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
+    const { anilistId, season, episode } = req.params;
 
-    console.log(`🎌 Fetching: ${animeId}, S${season}, E${episode}`);
+    console.log(`🎌 Fetching: ${anilistId}, S${season}, E${episode}`);
 
     try {
-        const episodeData = await getEpisodeMultiSource(animeId, parseInt(season), parseInt(episode));
+        const animeSlug = await getAnimeSlug(anilistId);
+        const episodeData = await getEpisodeMultiSource(animeSlug, parseInt(season), parseInt(episode));
 
         if (!episodeData.success) {
             return res.status(404).json({ 
                 error: 'Episode not found on any source',
-                tried_sources: ['AnimeWorld', 'Backup', 'VidAPI']
+                tried_sources: ['AnimeWorld', 'Backup'],
+                anime_slug: animeSlug
             });
         }
 
         res.json({
             success: true,
-            anime_id: animeId,
+            anilist_id: anilistId,
+            anime_slug: animeSlug,
             season: parseInt(season),
             episode: parseInt(episode),
             title: episodeData.title,
@@ -335,13 +317,12 @@ app.get('/api/search/:query', async (req, res) => {
     
     try {
         // Search all sources
-        const [animeworldResults, backupResults, vidapiResults] = await Promise.all([
+        const [animeworldResults, backupResults] = await Promise.all([
             searchAnime(query, 'ANIMEWORLD'),
-            searchAnime(query, 'BACKUP'),
-            searchVidAPI(query)
+            searchAnime(query, 'BACKUP')
         ]);
 
-        const allResults = [...animeworldResults, ...backupResults, ...vidapiResults];
+        const allResults = [...animeworldResults, ...backupResults];
         
         res.json({
             success: true,
@@ -355,12 +336,13 @@ app.get('/api/search/:query', async (req, res) => {
 });
 
 // Embed endpoint
-app.get('/anime/:animeId/:episode/:language?', async (req, res) => {
-    const { animeId, episode, language = 'sub' } = req.params;
+app.get('/anime/:anilistId/:episode/:language?', async (req, res) => {
+    const { anilistId, episode, language = 'sub' } = req.params;
     const season = 1;
 
     try {
-        const episodeData = await getEpisodeMultiSource(animeId, season, parseInt(episode));
+        const animeSlug = await getAnimeSlug(anilistId);
+        const episodeData = await getEpisodeMultiSource(animeSlug, season, parseInt(episode));
 
         if (!episodeData.success || episodeData.players.length === 0) {
             return res.send(`
@@ -368,8 +350,9 @@ app.get('/anime/:animeId/:episode/:language?', async (req, res) => {
                     <body style="background: #0a0a0a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: Arial;">
                         <div style="text-align: center;">
                             <h1>Episode Not Found</h1>
-                            <p>Anime ID: ${animeId} | Episode: ${episode} | Language: ${language}</p>
-                            <p>Tried: AnimeWorld, Backup Source, VidAPI</p>
+                            <p>Anime ID: ${anilistId} | Episode: ${episode} | Language: ${language}</p>
+                            <p>Anime Slug: ${animeSlug}</p>
+                            <p>Tried: AnimeWorld, Backup Source</p>
                         </div>
                     </body>
                 </html>
@@ -403,7 +386,8 @@ app.get('/anime/:animeId/:episode/:language?', async (req, res) => {
                 <body style="background: #0a0a0a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: Arial;">
                     <div style="text-align: center;">
                         <h1>Error Loading Anime</h1>
-                        <p>Source: Multi-source fallback</p>
+                        <p>Anime ID: ${anilistId} | Episode: ${episode}</p>
+                        <p>Error: ${error.message}</p>
                     </div>
                 </body>
             </html>
@@ -425,7 +409,7 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
     res.json({ 
         status: 'OK',
-        message: 'Multi-source Anime API is running',
+        message: 'AnimeWorld API is running',
         sources: Object.keys(SOURCES),
         timestamp: new Date().toISOString()
     });
@@ -433,8 +417,8 @@ app.get('/health', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Multi-source Anime API running on port ${PORT}`);
-    console.log('🌐 Sources: AnimeWorld, Backup, VidAPI');
+    console.log(`🚀 AnimeWorld API running on port ${PORT}`);
+    console.log('🌐 Sources: AnimeWorld, Backup');
     console.log('📖 Docs: http://localhost:3000/docs');
 });
 
