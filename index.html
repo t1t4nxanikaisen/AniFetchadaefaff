@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnimeWorld Pro - All Anime & Cartoons</title>
+    <title>AnimeWorld Pro - Stream Anime & Cartoons</title>
     <style>
         * {
             margin: 0;
@@ -170,25 +170,23 @@
             background: #e50914;
         }
 
-        .genre-row {
+        .content-row {
             margin: 30px 0;
         }
 
-        .genre-title {
+        .content-title {
             font-size: 24px;
             margin: 20px 0;
             color: #fff;
         }
 
-        .anime-row {
-            display: flex;
-            overflow-x: auto;
-            gap: 15px;
-            padding: 10px 5px;
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
         }
 
-        .anime-card {
-            flex: 0 0 220px;
+        .content-card {
             background: #181818;
             border-radius: 8px;
             overflow: hidden;
@@ -196,27 +194,27 @@
             cursor: pointer;
         }
 
-        .anime-card:hover {
+        .content-card:hover {
             transform: scale(1.05);
         }
 
-        .anime-card img {
+        .content-card img {
             width: 100%;
             height: 300px;
             object-fit: cover;
         }
 
-        .anime-info {
+        .content-info {
             padding: 15px;
         }
 
-        .anime-title {
+        .content-name {
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 5px;
         }
 
-        .anime-meta {
+        .content-meta {
             font-size: 12px;
             color: #999;
         }
@@ -225,6 +223,7 @@
         .watch-container {
             padding-top: 80px;
             background: #0f0f0f;
+            min-height: 100vh;
         }
 
         .watch-header {
@@ -341,7 +340,7 @@
             color: white;
         }
 
-        .anime-details {
+        .content-details {
             background: #181818;
             padding: 30px;
             border-radius: 8px;
@@ -389,6 +388,8 @@
             justify-content: center;
             align-items: center;
             z-index: 2000;
+            flex-direction: column;
+            gap: 20px;
         }
 
         .spinner {
@@ -398,6 +399,11 @@
             border-top: 5px solid #e50914;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            color: #fff;
+            font-size: 18px;
         }
 
         @keyframes spin {
@@ -449,8 +455,8 @@
             .hero h1 {
                 font-size: 36px;
             }
-            .anime-card {
-                flex: 0 0 180px;
+            .content-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
         }
     </style>
@@ -464,10 +470,9 @@
                     <a href="#" onclick="showHomepage()">Home</a>
                     <a href="#" onclick="filterByType('anime')">Anime</a>
                     <a href="#" onclick="filterByType('cartoon')">Cartoons</a>
-                    <a href="#" onclick="filterByType('movie')">Movies</a>
                 </div>
                 <div class="search-bar">
-                    <input type="text" id="searchInput" placeholder="Search all content...">
+                    <input type="text" id="searchInput" placeholder="Search anime and cartoons...">
                     <button onclick="performSearch()">Search</button>
                 </div>
             </div>
@@ -478,38 +483,51 @@
         <section class="hero">
             <div class="container">
                 <div class="hero-content">
-                    <h1>All Anime & Cartoons</h1>
-                    <p>Stream every anime and cartoon from AnimeWorld with perfect quality</p>
+                    <h1>Stream Anime & Cartoons</h1>
+                    <p>Watch your favorite anime and cartoons with high-quality streaming</p>
                     <div class="stats">
                         <div class="stat-item">
-                            <div class="stat-number">150+</div>
+                            <div class="stat-number" id="totalAnime">20+</div>
                             <div class="stat-label">Anime Series</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-number">50+</div>
+                            <div class="stat-number">5+</div>
                             <div class="stat-label">Cartoons</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-number">Instant</div>
-                            <div class="stat-label">Streaming</div>
+                            <div class="stat-number">HD</div>
+                            <div class="stat-label">Quality</div>
                         </div>
                     </div>
-                    <button class="cta-button" onclick="showRandomContent()">Start Watching</button>
+                    <button class="cta-button" onclick="showRandomContent()">Start Watching Now</button>
                 </div>
             </div>
         </section>
 
         <div class="container">
             <div class="genre-tabs" id="genreTabs"></div>
-            <div id="contentSections"></div>
+            <div id="contentSections">
+                <div class="content-row">
+                    <h2 class="content-title">Popular Anime</h2>
+                    <div class="content-grid" id="animeGrid">
+                        <!-- Anime will be loaded here -->
+                    </div>
+                </div>
+                <div class="content-row">
+                    <h2 class="content-title">Popular Cartoons</h2>
+                    <div class="content-grid" id="cartoonGrid">
+                        <!-- Cartoons will be loaded here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div id="watchPage" class="watch-container" style="display: none;">
         <div class="container">
             <div class="watch-header">
-                <h1 class="watch-title" id="watchTitle"></h1>
-                <button class="back-button" onclick="showHomepage()">Back to Home</button>
+                <h1 class="watch-title" id="watchTitle">Loading...</h1>
+                <button class="back-button" onclick="showHomepage()">← Back to Home</button>
             </div>
 
             <div class="player-section">
@@ -518,25 +536,27 @@
                 </div>
                 <div class="player-controls">
                     <select id="serverSelect" onchange="switchServer()">
-                        <option value="0">Server 1 (HD)</option>
+                        <option value="0">Select Server</option>
                     </select>
-                    <div class="server-info" id="serverInfo"></div>
+                    <div class="server-info" id="serverInfo">Select an episode to start playing</div>
                 </div>
             </div>
 
             <div class="episode-controls">
-                <button class="episode-btn" id="prevEpisode" onclick="changeEpisode(-1)" disabled>Previous</button>
-                <button class="episode-btn" id="nextEpisode" onclick="changeEpisode(1)">Next</button>
+                <button class="episode-btn" id="prevEpisode" onclick="changeEpisode(-1)" disabled>← Previous</button>
+                <span id="episodeInfo">Episode 1</span>
+                <button class="episode-btn" id="nextEpisode" onclick="changeEpisode(1)">Next →</button>
             </div>
 
-            <div class="anime-details">
+            <div class="content-details">
                 <h2 class="details-title" id="detailsTitle"></h2>
                 <div class="details-meta" id="detailsMeta"></div>
+                <p class="details-description" id="detailsDescription"></p>
                 <div class="details-genres" id="detailsGenres"></div>
             </div>
 
             <div class="episode-list">
-                <h2 class="genre-title">Episodes</h2>
+                <h2 class="content-title">Episodes</h2>
                 <div class="episode-grid" id="episodeGrid"></div>
             </div>
         </div>
@@ -544,6 +564,7 @@
 
     <div class="loading" id="loading" style="display: none;">
         <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Loading...</div>
     </div>
 
     <footer>
@@ -554,36 +575,31 @@
                     <ul>
                         <li><a href="#" onclick="filterByType('anime')">All Anime</a></li>
                         <li><a href="#" onclick="filterByType('cartoon')">Cartoons</a></li>
-                        <li><a href="#" onclick="filterByType('movie')">Movies</a></li>
+                        <li><a href="#" onclick="showHomepage()">Home</a></li>
                     </ul>
                 </div>
                 <div class="footer-column">
-                    <h3>Genres</h3>
-                    <ul id="footerGenres"></ul>
+                    <h3>Support</h3>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Contact Us</a></li>
+                        <li><a href="#">FAQ</a></li>
+                    </ul>
                 </div>
             </div>
             <div class="copyright">
-                © 2024 AnimeWorld Pro. All content from watchanimeworld.in
+                © 2024 AnimeWorld Pro. Streaming anime and cartoons from AnimeWorld.
             </div>
         </div>
     </footer>
 
     <script>
-        const API_BASE_URL = window.location.hostname === 'localhost' 
-            ? '/api/anime' 
-            : 'https://anisnfdf.vercel.app/api/anime';
+        // API Configuration - Change this to your backend URL
+        const API_BASE_URL = 'http://localhost:3000/api'; // Local development
+        // const API_BASE_URL = 'https://your-backend.vercel.app/api'; // Production
 
-        // Content database (would be populated from API in real implementation)
-        const contentDatabase = Object.keys(ANIMEWORLD_DATABASE).map(id => ({
-            id: parseInt(id),
-            ...ANIMEWORLD_DATABASE[id],
-            image: `https://via.placeholder.com/300x400/181818/FFFFFF?text=${encodeURIComponent(ANIMEWORLD_DATABASE[id].title)}`,
-            description: `Watch ${ANIMEWORLD_DATABASE[id].title} in HD quality with multiple servers.`,
-            year: Math.floor(Math.random() * 25) + 2000,
-            status: ['Ongoing', 'Completed', 'Upcoming'][Math.floor(Math.random() * 3)],
-            totalEpisodes: Math.floor(Math.random() * 100) + 12
-        }));
-
+        // Global state
+        let allContent = [];
         let currentContent = null;
         let currentSeason = 1;
         let currentEpisode = 1;
@@ -593,92 +609,124 @@
         // DOM elements
         const homepage = document.getElementById('homepage');
         const watchPage = document.getElementById('watchPage');
-        const contentSections = document.getElementById('contentSections');
+        const animeGrid = document.getElementById('animeGrid');
+        const cartoonGrid = document.getElementById('cartoonGrid');
         const searchInput = document.getElementById('searchInput');
         const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loadingText');
         const watchTitle = document.getElementById('watchTitle');
         const playerFrame = document.getElementById('playerFrame');
         const serverSelect = document.getElementById('serverSelect');
         const serverInfo = document.getElementById('serverInfo');
         const prevEpisode = document.getElementById('prevEpisode');
         const nextEpisode = document.getElementById('nextEpisode');
+        const episodeInfo = document.getElementById('episodeInfo');
         const episodeGrid = document.getElementById('episodeGrid');
         const detailsTitle = document.getElementById('detailsTitle');
         const detailsMeta = document.getElementById('detailsMeta');
+        const detailsDescription = document.getElementById('detailsDescription');
         const detailsGenres = document.getElementById('detailsGenres');
+        const totalAnime = document.getElementById('totalAnime');
 
-        function init() {
-            createContentSections();
-            setupEventListeners();
+        // Initialize application
+        async function init() {
+            showLoading('Loading content...');
+            try {
+                await loadAllContent();
+                setupEventListeners();
+                hideLoading();
+            } catch (error) {
+                showError('Failed to load content. Please check if the backend server is running.');
+                console.error('Initialization error:', error);
+            }
         }
 
-        function createContentSections() {
-            contentSections.innerHTML = '';
-            
-            // Group by type
-            const types = ['anime', 'cartoon', 'movie'];
-            types.forEach(type => {
-                const typeContent = contentDatabase.filter(item => item.type === type);
-                if (typeContent.length > 0) {
-                    createContentSection(type.charAt(0).toUpperCase() + type.slice(1), typeContent);
+        // Load all content from API
+        async function loadAllContent() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/content`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    allContent = data.content;
+                    displayContent();
+                    totalAnime.textContent = allContent.filter(c => c.type === 'anime').length + '+';
+                } else {
+                    throw new Error('Failed to load content');
                 }
-            });
+            } catch (error) {
+                console.error('Error loading content:', error);
+                // Fallback to static content if API is unavailable
+                allContent = getFallbackContent();
+                displayContent();
+                totalAnime.textContent = allContent.filter(c => c.type === 'anime').length + '+';
+            }
         }
 
-        function createContentSection(title, contentList) {
-            const section = document.createElement('div');
-            section.className = 'genre-row';
+        // Display content on homepage
+        function displayContent() {
+            const anime = allContent.filter(item => item.type === 'anime');
+            const cartoons = allContent.filter(item => item.type === 'cartoon');
 
-            const sectionTitle = document.createElement('h2');
-            sectionTitle.className = 'genre-title';
-            sectionTitle.textContent = title;
-            section.appendChild(sectionTitle);
+            animeGrid.innerHTML = anime.map(item => createContentCard(item)).join('');
+            cartoonGrid.innerHTML = cartoons.map(item => createContentCard(item)).join('');
+        }
 
-            const row = document.createElement('div');
-            row.className = 'anime-row';
-
-            contentList.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'anime-card';
-                card.onclick = () => selectContent(item.id);
-
-                card.innerHTML = `
-                    <img src="${item.image}" alt="${item.title}">
-                    <div class="anime-info">
-                        <div class="anime-title">${item.title}</div>
-                        <div class="anime-meta">${item.type} • ${item.year}</div>
+        // Create content card
+        function createContentCard(item) {
+            return `
+                <div class="content-card" onclick="selectContent(${item.id})">
+                    <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/300x400/181818/FFFFFF?text=Image+Not+Found'">
+                    <div class="content-info">
+                        <div class="content-name">${item.title}</div>
+                        <div class="content-meta">${item.type} • ${item.episodes} episodes</div>
                     </div>
-                `;
-
-                row.appendChild(card);
-            });
-
-            section.appendChild(row);
-            contentSections.appendChild(section);
+                </div>
+            `;
         }
 
+        // Select content to watch
         async function selectContent(contentId) {
-            currentContent = contentDatabase.find(item => item.id === contentId);
-            if (!currentContent) return;
+            showLoading('Loading content...');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/${contentId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentContent = data.content;
+                    showWatchPage();
+                    await loadEpisode(1, 1);
+                } else {
+                    throw new Error('Content not found');
+                }
+            } catch (error) {
+                console.error('Error selecting content:', error);
+                hideLoading();
+                alert('Failed to load content. Please try again.');
+            }
+        }
 
-            showLoading();
+        // Show watch page
+        function showWatchPage() {
             homepage.style.display = 'none';
             watchPage.style.display = 'block';
-
-            // Update UI
+            
             watchTitle.textContent = currentContent.title;
             detailsTitle.textContent = currentContent.title;
-            detailsMeta.textContent = `${currentContent.year} • ${currentContent.status} • ${currentContent.totalEpisodes} Episodes`;
+            detailsMeta.textContent = `${currentContent.year} • ${currentContent.status} • ${currentContent.episodes} Episodes`;
+            detailsDescription.textContent = currentContent.description;
             detailsGenres.innerHTML = `<span class="genre-tag">${currentContent.type}</span>`;
-
+            
             setupEpisodeGrid();
-            await loadEpisode(1, 1);
+            window.scrollTo(0, 0);
         }
 
+        // Setup episode grid
         function setupEpisodeGrid() {
             episodeGrid.innerHTML = '';
-            const totalEpisodes = currentContent.totalEpisodes;
-
+            const totalEpisodes = currentContent.episodes || 24;
+            
             for (let i = 1; i <= Math.min(totalEpisodes, 50); i++) {
                 const card = document.createElement('div');
                 card.className = 'episode-card';
@@ -690,18 +738,22 @@
                 };
                 episodeGrid.appendChild(card);
             }
-
+            
             updateEpisodeUI();
         }
 
+        // Load episode
         async function loadEpisode(season, episode) {
-            showLoading();
-            serverInfo.textContent = 'Loading servers...';
-
+            showLoading(`Loading episode ${episode}...`);
+            currentSeason = season;
+            currentEpisode = episode;
+            
             try {
-                const response = await fetch(`${API_BASE_URL}/${currentContent.id}/${season}/${episode}`);
+                const response = await fetch(
+                    `${API_BASE_URL}/content/${currentContent.id}/season/${season}/episode/${episode}`
+                );
                 const data = await response.json();
-
+                
                 if (data.success) {
                     currentPlayers = data.players;
                     updateServerSelector();
@@ -709,48 +761,59 @@
                     if (currentPlayers.length > 0) {
                         currentServerIndex = 0;
                         switchServer();
+                    } else {
+                        serverInfo.textContent = 'No players available';
                     }
+                } else {
+                    throw new Error('Failed to load episode');
                 }
             } catch (error) {
-                console.error('Error:', error);
-                serverInfo.textContent = 'Error loading content';
+                console.error('Error loading episode:', error);
+                serverInfo.textContent = 'Error loading episode';
             }
-
+            
             hideLoading();
+            updateEpisodeUI();
         }
 
+        // Update server selector
+        function updateServerSelector() {
+            serverSelect.innerHTML = currentPlayers.map((player, index) => 
+                `<option value="${index}">${player.name} (${player.quality})</option>`
+            ).join('');
+        }
+
+        // Switch server
         function switchServer() {
             if (currentPlayers.length === 0) return;
+            
             currentServerIndex = parseInt(serverSelect.value);
             const player = currentPlayers[currentServerIndex];
+            
             playerFrame.src = player.url;
             serverInfo.textContent = `Playing on ${player.name}`;
         }
 
-        function updateServerSelector() {
-            serverSelect.innerHTML = currentPlayers.map((player, index) => 
-                `<option value="${index}">${player.name}</option>`
-            ).join('');
-        }
-
+        // Change episode
         function changeEpisode(direction) {
             const newEpisode = currentEpisode + direction;
-            if (newEpisode >= 1 && newEpisode <= currentContent.totalEpisodes) {
-                currentEpisode = newEpisode;
+            if (newEpisode >= 1 && newEpisode <= currentContent.episodes) {
                 loadEpisode(1, newEpisode);
-                updateEpisodeUI();
             }
         }
 
+        // Update episode UI
         function updateEpisodeUI() {
+            episodeInfo.textContent = `Episode ${currentEpisode}`;
             prevEpisode.disabled = currentEpisode <= 1;
-            nextEpisode.disabled = currentEpisode >= currentContent.totalEpisodes;
+            nextEpisode.disabled = currentEpisode >= currentContent.episodes;
             
             document.querySelectorAll('.episode-card').forEach((card, index) => {
                 card.classList.toggle('active', index + 1 === currentEpisode);
             });
         }
 
+        // Show homepage
         function showHomepage() {
             watchPage.style.display = 'none';
             homepage.style.display = 'block';
@@ -758,37 +821,71 @@
             playerFrame.src = '';
         }
 
+        // Filter by type
         function filterByType(type) {
-            contentSections.innerHTML = '';
-            const filtered = contentDatabase.filter(item => item.type === type);
-            createContentSection(type.charAt(0).toUpperCase() + type.slice(1), filtered);
+            const content = allContent.filter(item => item.type === type);
+            const title = type === 'anime' ? 'Anime' : 'Cartoons';
+            
+            document.getElementById('contentSections').innerHTML = `
+                <div class="content-row">
+                    <h2 class="content-title">${title}</h2>
+                    <div class="content-grid">
+                        ${content.map(item => createContentCard(item)).join('')}
+                    </div>
+                </div>
+            `;
         }
 
-        function performSearch() {
-            const query = searchInput.value.toLowerCase();
+        // Search content
+        async function performSearch() {
+            const query = searchInput.value.trim();
             if (!query) {
-                createContentSections();
+                displayContent();
                 return;
             }
-
-            const results = contentDatabase.filter(item => 
-                item.title.toLowerCase().includes(query)
-            );
-
-            contentSections.innerHTML = '';
-            if (results.length > 0) {
-                createContentSection(`Search Results for "${query}"`, results);
-            } else {
-                contentSections.innerHTML = '<h2 class="genre-title">No results found</h2>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const results = data.results;
+                    document.getElementById('contentSections').innerHTML = `
+                        <div class="content-row">
+                            <h2 class="content-title">Search Results for "${query}" (${results.length} found)</h2>
+                            <div class="content-grid">
+                                ${results.map(item => createContentCard(item)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                // Fallback to client-side search
+                const results = allContent.filter(item => 
+                    item.title.toLowerCase().includes(query.toLowerCase())
+                );
+                document.getElementById('contentSections').innerHTML = `
+                    <div class="content-row">
+                        <h2 class="content-title">Search Results for "${query}" (${results.length} found)</h2>
+                        <div class="content-grid">
+                            ${results.map(item => createContentCard(item)).join('')}
+                        </div>
+                    </div>
+                `;
             }
         }
 
+        // Show random content
         function showRandomContent() {
-            const randomContent = contentDatabase[Math.floor(Math.random() * contentDatabase.length)];
+            if (allContent.length === 0) return;
+            const randomContent = allContent[Math.floor(Math.random() * allContent.length)];
             selectContent(randomContent.id);
         }
 
-        function showLoading() {
+        // Loading functions
+        function showLoading(text = 'Loading...') {
+            loadingText.textContent = text;
             loading.style.display = 'flex';
         }
 
@@ -796,7 +893,15 @@
             loading.style.display = 'none';
         }
 
+        function showError(message) {
+            loadingText.textContent = message;
+            loading.style.display = 'flex';
+            setTimeout(hideLoading, 3000);
+        }
+
+        // Event listeners
         function setupEventListeners() {
+            // Header scroll effect
             window.addEventListener('scroll', () => {
                 document.getElementById('header').classList.toggle('scrolled', window.scrollY > 50);
             });
@@ -806,16 +911,73 @@
                 if (!currentContent) return;
                 if (e.key === 'ArrowLeft') changeEpisode(-1);
                 if (e.key === 'ArrowRight') changeEpisode(1);
+                if (e.key === 'Escape') showHomepage();
+            });
+
+            // Search on Enter key
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
             });
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', init);
+        // Fallback content for when API is unavailable
+        function getFallbackContent() {
+            return [
+                {
+                    id: 1,
+                    title: 'Cowboy Bebop',
+                    type: 'anime',
+                    episodes: 26,
+                    image: 'https://via.placeholder.com/300x400/181818/FFFFFF?text=Cowboy+Bebop',
+                    description: 'Space bounty hunters track down criminals across the solar system.',
+                    year: 1998,
+                    status: 'Completed'
+                },
+                {
+                    id: 2,
+                    title: 'Death Note',
+                    type: 'anime',
+                    episodes: 37,
+                    image: 'https://via.placeholder.com/300x400/181818/FFFFFF?text=Death+Note',
+                    description: 'A high school student discovers a notebook that can kill anyone whose name is written in it.',
+                    year: 2006,
+                    status: 'Completed'
+                },
+                {
+                    id: 6,
+                    title: 'One Piece',
+                    type: 'anime',
+                    episodes: 1100,
+                    image: 'https://via.placeholder.com/300x400/181818/FFFFFF?text=One+Piece',
+                    description: 'Monkey D. Luffy and his pirate crew search for the ultimate treasure.',
+                    year: 1999,
+                    status: 'Ongoing'
+                },
+                {
+                    id: 101,
+                    title: 'Adventure Time',
+                    type: 'cartoon',
+                    episodes: 283,
+                    image: 'https://via.placeholder.com/300x400/181818/FFFFFF?text=Adventure+Time',
+                    description: 'A boy and his magical dog go on adventures in the Land of Ooo.',
+                    year: 2010,
+                    status: 'Completed'
+                },
+                {
+                    id: 102,
+                    title: 'Rick and Morty',
+                    type: 'cartoon',
+                    episodes: 61,
+                    image: 'https://via.placeholder.com/300x400/181818/FFFFFF?text=Rick+and+Morty',
+                    description: 'An alcoholic scientist drags his grandson on crazy adventures.',
+                    year: 2013,
+                    status: 'Ongoing'
+                }
+            ];
+        }
 
-        // Mock database (in real implementation, this would come from the API)
-        const ANIMEWORLD_DATABASE = {
-            // ... (the same database object from the API)
-        };
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
