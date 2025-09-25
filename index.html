@@ -3,202 +3,401 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnimeFlix Pro - Stream 2000+ Anime</title>
-    <link rel="icon" href="/favicon.ico">
+    <title>AnimeWorld Pro - All Anime & Cartoons</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Arial', sans-serif;
         }
 
         body {
-            background: #0a0a1a;
-            color: #e0e0ff;
+            background: #0f0f0f;
+            color: #e0e0e0;
             line-height: 1.6;
-            overflow-x: hidden;
         }
 
         .container {
-            max-width: 1800px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0 20px;
         }
 
-        /* Header Styles */
+        /* Header */
         header {
-            background: linear-gradient(135deg, #1a1a3a 0%, #0a0a1a 100%);
-            border-radius: 20px;
-            padding: 30px 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
-            border: 1px solid #25254d;
-            position: sticky;
-            top: 0;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px 20px;
+            position: fixed;
+            width: 100%;
             z-index: 1000;
+            transition: background 0.3s;
+        }
+
+        header.scrolled {
+            background: #141414;
         }
 
         .header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 25px;
         }
 
         .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .logo-icon {
-            font-size: 3rem;
-            color: #6c63ff;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .logo-text {
-            font-size: 2.5rem;
+            font-size: 28px;
             font-weight: bold;
-            background: linear-gradient(45deg, #6c63ff, #ff6b6b, #4ecdc4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 30px rgba(108, 99, 255, 0.5);
+            color: #e50914;
+            text-decoration: none;
         }
 
-        .search-bar {
-            flex: 1;
-            max-width: 600px;
-            position: relative;
-        }
-
-        .search-bar input {
-            width: 100%;
-            padding: 18px 60px 18px 25px;
-            background: #25254d;
-            border: 2px solid #6c63ff;
-            border-radius: 50px;
-            color: #e0e0ff;
-            font-size: 1.1rem;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .search-bar input:focus {
-            border-color: #4ecdc4;
-            box-shadow: 0 0 20px rgba(108, 99, 255, 0.3);
-        }
-
-        .search-bar button {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: linear-gradient(45deg, #6c63ff, #4ecdc4);
-            border: none;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            color: white;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-        }
-
-        .search-bar button:hover {
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        /* Player Section */
-        .player-section {
-            background: #1a1a3a;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-            border: 1px solid #25254d;
-        }
-
-        .player-header {
+        .nav-links {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
             gap: 20px;
         }
 
-        .anime-title {
-            font-size: 2.2rem;
-            color: #6c63ff;
-            text-shadow: 0 0 15px rgba(108, 99, 255, 0.5);
+        .nav-links a {
+            color: #e0e0e0;
+            text-decoration: none;
+            transition: color 0.3s;
         }
 
-        .server-selector {
+        .nav-links a:hover {
+            color: #e50914;
+        }
+
+        .search-bar {
             display: flex;
-            gap: 15px;
             align-items: center;
-            background: #25254d;
-            padding: 12px 20px;
-            border-radius: 12px;
         }
 
-        .server-selector select {
-            background: #1a1a3a;
-            border: 2px solid #6c63ff;
+        .search-bar input {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            width: 300px;
+            font-size: 14px;
+        }
+
+        .search-bar button {
+            background: #e50914;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            margin-left: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Homepage */
+        .hero {
+            height: 70vh;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1633617477271-d4f351ff7c7c?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            padding-top: 80px;
+        }
+
+        .hero-content {
+            max-width: 600px;
+            padding: 0 20px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .hero p {
+            font-size: 18px;
+            margin-bottom: 25px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e50914;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .cta-button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .genre-tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .genre-tab {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .genre-tab.active, .genre-tab:hover {
+            background: #e50914;
+        }
+
+        .genre-row {
+            margin: 30px 0;
+        }
+
+        .genre-title {
+            font-size: 24px;
+            margin: 20px 0;
+            color: #fff;
+        }
+
+        .anime-row {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            padding: 10px 5px;
+        }
+
+        .anime-card {
+            flex: 0 0 220px;
+            background: #181818;
             border-radius: 8px;
-            padding: 12px 18px;
-            color: #e0e0ff;
-            outline: none;
-            font-size: 1rem;
-            min-width: 200px;
+            overflow: hidden;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .anime-card:hover {
+            transform: scale(1.05);
+        }
+
+        .anime-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .anime-info {
+            padding: 15px;
+        }
+
+        .anime-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .anime-meta {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* Watch Page */
+        .watch-container {
+            padding-top: 80px;
+            background: #0f0f0f;
+        }
+
+        .watch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .watch-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #e50914;
+        }
+
+        .back-button {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .player-section {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 30px;
         }
 
         .iframe-container {
-            background: #000;
-            border-radius: 15px;
-            overflow: hidden;
             position: relative;
-            height: 70vh;
-            min-height: 600px;
-            margin-bottom: 25px;
-            border: 3px solid #6c63ff;
-            box-shadow: 0 0 30px rgba(108, 99, 255, 0.3);
+            padding-bottom: 56.25%;
+            height: 0;
         }
 
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .loading {
+        .iframe-container iframe {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1a1a3a, #0a0a1a);
+            border: none;
+        }
+
+        .player-controls {
+            padding: 20px;
+            background: #181818;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .server-selector select {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+        }
+
+        .server-info {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .episode-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .episode-btn {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .episode-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .episode-list {
+            margin: 30px 0;
+        }
+
+        .episode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .episode-card {
+            background: #181818;
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .episode-card:hover {
+            background: #222;
+        }
+
+        .episode-card.active {
+            background: #e50914;
+            color: white;
+        }
+
+        .anime-details {
+            background: #181818;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .details-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .details-meta {
+            font-size: 16px;
+            color: #999;
+            margin-bottom: 20px;
+        }
+
+        .details-description {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .details-genres {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .genre-tag {
+            background: #333;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
-            gap: 25px;
+            z-index: 2000;
         }
 
         .spinner {
-            width: 70px;
-            height: 70px;
-            border: 6px solid #25254d;
-            border-top: 6px solid #6c63ff;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #333;
+            border-top: 5px solid #e50914;
             border-radius: 50%;
-            animation: spin 1.5s linear infinite;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
@@ -206,995 +405,417 @@
             100% { transform: rotate(360deg); }
         }
 
-        .episode-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #25254d;
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid #6c63ff;
-        }
-
-        .episode-btn {
-            background: linear-gradient(45deg, #6c63ff, #4ecdc4);
-            border: none;
-            border-radius: 12px;
-            padding: 15px 30px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
-        .episode-btn:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(108, 99, 255, 0.4);
-        }
-
-        .episode-btn:disabled {
-            background: #3a3a5a;
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-
-        .episode-info {
-            text-align: center;
-            font-weight: bold;
-            color: #6c63ff;
-            font-size: 1.3rem;
-            text-shadow: 0 0 10px rgba(108, 99, 255, 0.5);
-        }
-
-        /* Episode List */
-        .episode-list {
-            margin-top: 30px;
-        }
-
-        .episode-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-        }
-
-        .episode-card {
-            background: #1a1a3a;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: background 0.3s;
-            border: 1px solid #25254d;
-        }
-
-        .episode-card:hover {
-            background: #25254d;
-        }
-
-        .episode-card.active {
-            background: #6c63ff;
-            color: white;
-        }
-
-        /* Anime Details */
-        .anime-details {
-            background: #1a1a3a;
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-            border: 1px solid #25254d;
-        }
-
-        .details-header {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-
-        .details-poster {
-            width: 250px;
-            height: 350px;
-            object-fit: cover;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(108, 99, 255, 0.2);
-        }
-
-        .details-info {
-            flex: 1;
-        }
-
-        .details-title {
-            font-size: 2.5rem;
-            color: #6c63ff;
-            margin-bottom: 10px;
-        }
-
-        .details-meta {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 15px;
-            color: #a0a0ff;
-            font-size: 1.1rem;
-        }
-
-        .details-description {
-            margin-bottom: 20px;
-            color: #e0e0ff;
-            font-size: 1rem;
-        }
-
-        .details-genres {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .genre-tag {
-            background: rgba(108, 99, 255, 0.3);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-        }
-
-        /* Genre Navigation */
-        .genre-navigation {
-            background: #1a1a3a;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 1px solid #25254d;
-        }
-
-        .genre-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            justify-content: center;
-        }
-
-        .genre-tab {
-            background: #25254d;
-            border: 2px solid #6c63ff;
-            border-radius: 25px;
-            padding: 12px 25px;
-            color: #e0e0ff;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .genre-tab:hover, .genre-tab.active {
-            background: #6c63ff;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 99, 255, 0.3);
-        }
-
-        /* Anime Grid Sections */
-        .anime-section {
-            margin-bottom: 50px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 2.2rem;
-            color: #6c63ff;
-            text-shadow: 0 0 15px rgba(108, 99, 255, 0.3);
-        }
-
-        .view-all {
-            color: #4ecdc4;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .view-all:hover {
-            color: #6c63ff;
-        }
-
-        .anime-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 30px;
-        }
-
-        .anime-card {
-            background: #1a1a3a;
-            border-radius: 20px;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid #25254d;
-            position: relative;
-        }
-
-        .anime-card:hover {
-            transform: translateY(-15px) scale(1.02);
-            box-shadow: 0 20px 50px rgba(108, 99, 255, 0.3);
-            border-color: #6c63ff;
-        }
-
-        .anime-card img {
-            width: 100%;
-            height: 350px;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .anime-card:hover img {
-            transform: scale(1.1);
-        }
-
-        .anime-card-content {
-            padding: 25px;
-            position: relative;
-        }
-
-        .anime-card h4 {
-            font-size: 1.3rem;
-            margin-bottom: 12px;
-            color: #e0e0ff;
-            line-height: 1.3;
-        }
-
-        .anime-card .meta {
-            color: #a0a0ff;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .anime-card .description {
-            color: #a0a0ff;
-            font-size: 0.95rem;
-            margin-bottom: 15px;
-            line-height: 1.5;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .anime-card .episodes {
-            color: #6c63ff;
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-
-        .genre-tag {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(108, 99, 255, 0.9);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        /* Featured Section */
-        .featured-anime {
-            background: linear-gradient(135deg, #1a1a3a 0%, #25254d 100%);
-            border-radius: 20px;
-            padding: 50px;
-            margin-bottom: 50px;
-            text-align: center;
-            border: 1px solid #6c63ff;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-        }
-
-        .featured-title {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            background: linear-gradient(45deg, #6c63ff, #ff6b6b, #4ecdc4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 30px rgba(108, 99, 255, 0.5);
-        }
-
-        .featured-subtitle {
-            font-size: 1.3rem;
-            color: #a0a0ff;
-            margin-bottom: 40px;
-        }
-
-        .featured-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-            margin-top: 40px;
-        }
-
         /* Footer */
         footer {
-            text-align: center;
-            padding: 40px;
-            background: #1a1a3a;
-            border-radius: 20px;
+            background: #000;
+            padding: 50px 20px;
             margin-top: 50px;
-            border: 1px solid #25254d;
         }
 
-        .stats {
+        .footer-content {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+            gap: 30px;
         }
 
-        .stat-item {
-            background: #25254d;
-            padding: 30px;
-            border-radius: 15px;
-            border: 1px solid #6c63ff;
+        .footer-column h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #fff;
         }
 
-        .stat-number {
-            font-size: 3rem;
-            color: #6c63ff;
-            font-weight: bold;
-            text-shadow: 0 0 15px rgba(108, 99, 255, 0.5);
+        .footer-column ul {
+            list-style: none;
         }
 
-        .stat-label {
-            color: #a0a0ff;
-            font-size: 1.1rem;
-            margin-top: 10px;
+        .footer-column ul li {
+            margin-bottom: 12px;
         }
 
-        /* Responsive Design */
-        @media (max-width: 1200px) {
-            .iframe-container {
-                height: 60vh;
-            }
+        .footer-column ul li a {
+            color: #999;
+            text-decoration: none;
+            font-size: 14px;
+        }
 
-            .details-header {
-                flex-direction: column;
-            }
-
-            .details-poster {
-                width: 100%;
-                max-width: 300px;
-                height: auto;
-            }
+        .copyright {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 12px;
         }
 
         @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                text-align: center;
+            .hero h1 {
+                font-size: 36px;
             }
-
-            .search-bar {
-                max-width: 100%;
-            }
-
-            .iframe-container {
-                height: 50vh;
-                min-height: 400px;
-            }
-
-            .anime-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            }
-
-            .featured-title {
-                font-size: 2.2rem;
-            }
-
-            .episode-controls {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .episode-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
-        }
-
-        @media (max-width: 480px) {
-            .iframe-container {
-                height: 40vh;
-                min-height: 300px;
-            }
-
-            .anime-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .details-title {
-                font-size: 1.8rem;
+            .anime-card {
+                flex: 0 0 180px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header>
+    <header id="header">
+        <div class="container">
             <div class="header-content">
-                <div class="logo" onclick="showHomepage()">
-                    <div class="logo-icon">🎌</div>
-                    <div class="logo-text">AnimeFlix Pro</div>
+                <a href="#" class="logo" onclick="showHomepage()">AnimeWorld Pro</a>
+                <div class="nav-links">
+                    <a href="#" onclick="showHomepage()">Home</a>
+                    <a href="#" onclick="filterByType('anime')">Anime</a>
+                    <a href="#" onclick="filterByType('cartoon')">Cartoons</a>
+                    <a href="#" onclick="filterByType('movie')">Movies</a>
                 </div>
                 <div class="search-bar">
-                    <input type="text" id="searchInput" placeholder="Search 2000+ anime series...">
-                    <button id="searchButton" onclick="searchAnime()">🔍</button>
+                    <input type="text" id="searchInput" placeholder="Search all content...">
+                    <button onclick="performSearch()">Search</button>
                 </div>
-            </div>
-        </header>
-
-        <!-- Homepage Content -->
-        <div id="homepage">
-            <!-- Featured Anime -->
-            <section class="featured-anime">
-                <h2 class="featured-title">🔥 Premium Anime Experience</h2>
-                <p class="featured-subtitle">Watch 2000+ anime with perfect iframe embeds and instant loading</p>
-                <div class="featured-grid" id="featuredAnime">
-                    <!-- Featured anime will be loaded here -->
-                </div>
-            </section>
-
-            <!-- Genre Navigation -->
-            <section class="genre-navigation">
-                <div class="genre-tabs" id="genreTabs">
-                    <!-- Genre tabs will be loaded here -->
-                </div>
-            </section>
-
-            <!-- Genre Sections -->
-            <div id="genreSections">
-                <!-- Genre sections will be loaded here -->
             </div>
         </div>
+    </header>
 
-        <!-- Watch Page -->
-        <div id="watchPage" style="display: none;">
-            <!-- Anime Details -->
-            <div class="anime-details">
-                <div class="details-header">
-                    <img id="detailsPoster" class="details-poster" src="" alt="Anime Poster">
-                    <div class="details-info">
-                        <h1 class="details-title" id="detailsTitle"></h1>
-                        <div class="details-meta">
-                            <span id="detailsYear"></span>
-                            <span id="detailsStatus"></span>
-                            <span id="detailsEpisodes"></span>
+    <div id="homepage">
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>All Anime & Cartoons</h1>
+                    <p>Stream every anime and cartoon from AnimeWorld with perfect quality</p>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-number">150+</div>
+                            <div class="stat-label">Anime Series</div>
                         </div>
-                        <p class="details-description" id="detailsDescription"></p>
-                        <div class="details-genres" id="detailsGenres"></div>
+                        <div class="stat-item">
+                            <div class="stat-number">50+</div>
+                            <div class="stat-label">Cartoons</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">Instant</div>
+                            <div class="stat-label">Streaming</div>
+                        </div>
                     </div>
+                    <button class="cta-button" onclick="showRandomContent()">Start Watching</button>
                 </div>
             </div>
+        </section>
 
-            <!-- Player Section -->
-            <div class="player-section">
-                <div class="player-header">
-                    <h2 class="anime-title" id="currentAnimeTitle">Select an Anime to Start Watching</h2>
-                    <div class="server-selector">
-                        <select id="serverSelect" onchange="switchServer()"></select>
-                        <div class="episode-info" id="serverInfo">Ready to play</div>
-                    </div>
-                </div>
-                
-                <div class="iframe-container">
-                    <div class="loading" id="loading">
-                        <div class="spinner"></div>
-                        <p style="font-size: 1.3rem;">Select an anime to load the player</p>
-                        <p style="color: #a0a0ff;">2000+ anime available with instant iframe embeds</p>
-                    </div>
-                    <iframe id="playerFrame" style="display: none;" allowfullscreen></iframe>
-                </div>
-                
-                <div class="episode-controls">
-                    <button class="episode-btn" id="prevEpisode" onclick="changeEpisode(-1)" disabled>⬅ Previous Episode</button>
-                    <div class="episode-info" id="episodeInfo">Episode: -</div>
-                    <button class="episode-btn" id="nextEpisode" onclick="changeEpisode(1)" disabled>Next Episode ➡</button>
-                </div>
-                
-                <div class="episode-list">
-                    <h2 class="section-title">Episodes</h2>
-                    <div class="episode-grid" id="episodeGrid"></div>
-                </div>
-            </div>
+        <div class="container">
+            <div class="genre-tabs" id="genreTabs"></div>
+            <div id="contentSections"></div>
         </div>
-
-        <!-- Footer -->
-        <footer>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-number" id="totalAnime">2000+</div>
-                    <div class="stat-label">Anime Series</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" id="activePlayers">0</div>
-                    <div class="stat-label">Active Streams</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">Instant</div>
-                    <div class="stat-label">Player Loading</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">50+</div>
-                    <div class="stat-label">Genres Available</div>
-                </div>
-            </div>
-            <p style="font-size: 1.1rem; margin-top: 20px;">AnimeFlix Pro - Ultimate Anime Streaming Platform</p>
-            <p style="color: #a0a0ff;">All content provided for premium streaming experience</p>
-        </footer>
     </div>
 
+    <div id="watchPage" class="watch-container" style="display: none;">
+        <div class="container">
+            <div class="watch-header">
+                <h1 class="watch-title" id="watchTitle"></h1>
+                <button class="back-button" onclick="showHomepage()">Back to Home</button>
+            </div>
+
+            <div class="player-section">
+                <div class="iframe-container">
+                    <iframe id="playerFrame" allowfullscreen></iframe>
+                </div>
+                <div class="player-controls">
+                    <select id="serverSelect" onchange="switchServer()">
+                        <option value="0">Server 1 (HD)</option>
+                    </select>
+                    <div class="server-info" id="serverInfo"></div>
+                </div>
+            </div>
+
+            <div class="episode-controls">
+                <button class="episode-btn" id="prevEpisode" onclick="changeEpisode(-1)" disabled>Previous</button>
+                <button class="episode-btn" id="nextEpisode" onclick="changeEpisode(1)">Next</button>
+            </div>
+
+            <div class="anime-details">
+                <h2 class="details-title" id="detailsTitle"></h2>
+                <div class="details-meta" id="detailsMeta"></div>
+                <div class="details-genres" id="detailsGenres"></div>
+            </div>
+
+            <div class="episode-list">
+                <h2 class="genre-title">Episodes</h2>
+                <div class="episode-grid" id="episodeGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>Content</h3>
+                    <ul>
+                        <li><a href="#" onclick="filterByType('anime')">All Anime</a></li>
+                        <li><a href="#" onclick="filterByType('cartoon')">Cartoons</a></li>
+                        <li><a href="#" onclick="filterByType('movie')">Movies</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Genres</h3>
+                    <ul id="footerGenres"></ul>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2024 AnimeWorld Pro. All content from watchanimeworld.in
+            </div>
+        </div>
+    </footer>
+
     <script>
-        // API Configuration
         const API_BASE_URL = window.location.hostname === 'localhost' 
             ? '/api/anime' 
             : 'https://anisnfdf.vercel.app/api/anime';
 
-        // Anime Database
-        const animeDatabase = [
-            { id: 21, title: "One Piece", slug: "one-piece", episodes: 1100, year: 1999, status: "Ongoing", genre: ["action", "adventure", "fantasy", "shounen"], description: "Join Monkey D. Luffy and his pirate crew in their epic quest for the ultimate treasure, the One Piece.", image: "https://cdn.myanimelist.net/images/anime/6/73245.jpg" },
-            { id: 20, title: "Naruto", slug: "naruto", episodes: 220, year: 2002, status: "Completed", genre: ["action", "adventure", "shounen"], description: "A young ninja's journey to become the strongest Hokage in his village.", image: "https://cdn.myanimelist.net/images/anime/13/17405.jpg" },
-            { id: 38000, title: "Demon Slayer", slug: "kimetsu-no-yaiba", episodes: 55, year: 2019, status: "Ongoing", genre: ["action", "fantasy", "supernatural"], description: "Tanjiro Kamado's quest to cure his sister and defeat powerful demons.", image: "https://cdn.myanimelist.net/images/anime/1286/99889.jpg" },
-            { id: 113415, title: "Jujutsu Kaisen", slug: "jujutsu-kaisen", episodes: 47, year: 2020, status: "Ongoing", genre: ["action", "fantasy", "supernatural"], description: "A world of cursed energy and intense exorcism battles.", image: "https://cdn.myanimelist.net/images/anime/1171/109222.jpg" },
-            { id: 11061, title: "Hunter x Hunter", slug: "hunter-x-hunter", episodes: 148, year: 2011, status: "Completed", genre: ["action", "adventure", "fantasy"], description: "Gon Freecss's journey to become a Hunter and find his father.", image: "https://cdn.myanimelist.net/images/anime/11/33657.jpg" },
-            { id: 175014, title: "Oshi no Ko", slug: "oshi-no-ko", episodes: 11, year: 2023, status: "Ongoing", genre: ["drama", "mystery", "supernatural"], description: "The dark side of the entertainment industry revealed.", image: "https://cdn.myanimelist.net/images/anime/1812/134736.jpg" },
-            { id: 186417, title: "Spy x Family", slug: "spy-x-family", episodes: 37, year: 2022, status: "Ongoing", genre: ["action", "comedy", "slice of life"], description: "A spy, an assassin, and a telepath form a hilarious fake family.", image: "https://cdn.myanimelist.net/images/anime/1441/122795.jpg" },
-            { id: 1535, title: "Death Note", slug: "death-note", episodes: 37, year: 2006, status: "Completed", genre: ["mystery", "psychological", "supernatural"], description: "A notebook that can kill anyone whose name is written in it.", image: "https://cdn.myanimelist.net/images/anime/9/9453.jpg" },
-            { id: 16498, title: "Attack on Titan", slug: "shingeki-no-kyojin", episodes: 88, year: 2013, status: "Completed", genre: ["action", "drama", "fantasy", "horror"], description: "Humanity's desperate struggle against giant humanoid creatures.", image: "https://cdn.myanimelist.net/images/anime/10/47347.jpg" },
-            { id: 101922, title: "Kaguya-sama: Love is War", slug: "kaguya-sama-love-is-war", episodes: 37, year: 2019, status: "Completed", genre: ["comedy", "romance", "psychological"], description: "Two geniuses try to make the other confess their love first.", image: "https://cdn.myanimelist.net/images/anime/1295/106551.jpg" },
-            { id: 9253, title: "Steins;Gate", slug: "steinsgate", episodes: 24, year: 2011, status: "Completed", genre: ["sci-fi", "thriller", "drama"], description: "Time travel experiments lead to unexpected consequences.", image: "https://cdn.myanimelist.net/images/anime/5/73199.jpg" },
-            { id: 18671, title: "Haikyu!!", slug: "haikyuu", episodes: 85, year: 2014, status: "Completed", genre: ["sports", "comedy", "drama"], description: "A short boy's journey to become a volleyball champion.", image: "https://cdn.myanimelist.net/images/anime/7/76014.jpg" },
-            { id: 104578, title: "Vinland Saga", slug: "vinland-saga", episodes: 48, year: 2019, status: "Ongoing", genre: ["action", "historical", "drama"], description: "Viking adventures and revenge in medieval Europe.", image: "https://cdn.myanimelist.net/images/anime/1500/103005.jpg" },
-            { id: 101759, title: "My Hero Academia", slug: "my-hero-academia", episodes: 138, year: 2016, status: "Ongoing", genre: ["action", "superhero", "shounen"], description: "A world where superpowers are the norm.", image: "https://cdn.myanimelist.net/images/anime/10/78745.jpg" },
-            { id: 24701, title: "Re:Zero", slug: "rezero", episodes: 50, year: 2016, status: "Ongoing", genre: ["fantasy", "drama", "psychological"], description: "A boy transported to another world with the power to return by death.", image: "https://cdn.myanimelist.net/images/anime/11/79410.jpg" },
-            { id: 25519, title: "Konosuba", slug: "konosuba", episodes: 20, year: 2016, status: "Completed", genre: ["comedy", "fantasy", "adventure"], description: "A hilarious fantasy adventure with useless goddesses.", image: "https://cdn.myanimelist.net/images/anime/8/77831.jpg" },
-            { id: 23289, title: "Overlord", slug: "overlord", episodes: 52, year: 2015, status: "Ongoing", genre: ["action", "fantasy", "isekai"], description: "A player trapped in a game world as his powerful character.", image: "https://cdn.myanimelist.net/images/anime/7/88019.jpg" }
-        ];
+        // Content database (would be populated from API in real implementation)
+        const contentDatabase = Object.keys(ANIMEWORLD_DATABASE).map(id => ({
+            id: parseInt(id),
+            ...ANIMEWORLD_DATABASE[id],
+            image: `https://via.placeholder.com/300x400/181818/FFFFFF?text=${encodeURIComponent(ANIMEWORLD_DATABASE[id].title)}`,
+            description: `Watch ${ANIMEWORLD_DATABASE[id].title} in HD quality with multiple servers.`,
+            year: Math.floor(Math.random() * 25) + 2000,
+            status: ['Ongoing', 'Completed', 'Upcoming'][Math.floor(Math.random() * 3)],
+            totalEpisodes: Math.floor(Math.random() * 100) + 12
+        }));
 
-        // Genre Definitions
-        const genres = [
-            { id: "all", name: "All Anime", color: "#6c63ff" },
-            { id: "action", name: "Action", color: "#ff6b6b" },
-            { id: "adventure", name: "Adventure", color: "#4ecdc4" },
-            { id: "fantasy", name: "Fantasy", color: "#ffd166" },
-            { id: "comedy", name: "Comedy", color: "#6a0572" },
-            { id: "drama", name: "Drama", color: "#1a535c" },
-            { id: "romance", name: "Romance", color: "#ff6b6b" },
-            { id: "sci-fi", name: "Sci-Fi", color: "#4ecdc4" },
-            { id: "horror", name: "Horror", color: "#25254d" },
-            { id: "mystery", name: "Mystery", color: "#6c63ff" },
-            { id: "psychological", name: "Psychological", color: "#ffd166" },
-            { id: "shounen", name: "Shounen", color: "#ff6b6b" },
-            { id: "sports", name: "Sports", color: "#4ecdc4" },
-            { id: "supernatural", name: "Supernatural", color: "#6c63ff" }
-        ];
-
-        // Current state
-        let currentAnime = null;
-        let currentEpisode = 1;
+        let currentContent = null;
         let currentSeason = 1;
+        let currentEpisode = 1;
         let currentPlayers = [];
         let currentServerIndex = 0;
-        let currentGenre = "all";
 
         // DOM elements
         const homepage = document.getElementById('homepage');
         const watchPage = document.getElementById('watchPage');
-        const featuredAnime = document.getElementById('featuredAnime');
-        const genreTabs = document.getElementById('genreTabs');
-        const genreSections = document.getElementById('genreSections');
-        const currentAnimeTitle = document.getElementById('currentAnimeTitle');
-        const playerFrame = document.getElementById('playerFrame');
+        const contentSections = document.getElementById('contentSections');
+        const searchInput = document.getElementById('searchInput');
         const loading = document.getElementById('loading');
+        const watchTitle = document.getElementById('watchTitle');
+        const playerFrame = document.getElementById('playerFrame');
         const serverSelect = document.getElementById('serverSelect');
         const serverInfo = document.getElementById('serverInfo');
-        const prevEpisodeBtn = document.getElementById('prevEpisode');
-        const nextEpisodeBtn = document.getElementById('nextEpisode');
-        const episodeInfo = document.getElementById('episodeInfo');
+        const prevEpisode = document.getElementById('prevEpisode');
+        const nextEpisode = document.getElementById('nextEpisode');
         const episodeGrid = document.getElementById('episodeGrid');
-        const totalAnime = document.getElementById('totalAnime');
         const detailsTitle = document.getElementById('detailsTitle');
-        const detailsYear = document.getElementById('detailsYear');
-        const detailsStatus = document.getElementById('detailsStatus');
-        const detailsEpisodes = document.getElementById('detailsEpisodes');
-        const detailsDescription = document.getElementById('detailsDescription');
+        const detailsMeta = document.getElementById('detailsMeta');
         const detailsGenres = document.getElementById('detailsGenres');
-        const detailsPoster = document.getElementById('detailsPoster');
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
 
-        // Initialize the site
         function init() {
-            loadGenreTabs();
-            loadFeaturedAnime();
-            loadGenreSections();
-            totalAnime.textContent = animeDatabase.length;
+            createContentSections();
             setupEventListeners();
         }
 
-        // Load genre tabs
-        function loadGenreTabs() {
-            genreTabs.innerHTML = genres.map(genre => `
-                <div class="genre-tab ${genre.id === currentGenre ? 'active' : ''}" 
-                     onclick="filterByGenre('${genre.id}')"
-                     style="border-color: ${genre.color}">
-                    ${genre.name}
-                </div>
-            `).join('');
-        }
-
-        // Load featured anime
-        function loadFeaturedAnime() {
-            const featured = animeDatabase.slice(0, 6);
-            featuredAnime.innerHTML = featured.map(anime => `
-                <div class="anime-card" onclick="selectAnime(${anime.id})">
-                    <div class="genre-tag" style="background: ${getGenreColor(anime.genre[0])}">
-                        ${anime.genre[0]}
-                    </div>
-                    <img src="${anime.image}" alt="${anime.title}">
-                    <div class="anime-card-content">
-                        <h4>${anime.title}</h4>
-                        <div class="meta">
-                            <span>${anime.year}</span>
-                            <span>${anime.episodes} EP</span>
-                        </div>
-                        <p class="description">${anime.description}</p>
-                        <p class="episodes">${anime.status}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Load genre sections
-        function loadGenreSections() {
-            genreSections.innerHTML = genres.filter(genre => genre.id !== 'all').map(genre => {
-                const genreAnime = animeDatabase.filter(anime => anime.genre.includes(genre.id));
-                if (genreAnime.length === 0) return '';
-                
-                return `
-                    <section class="anime-section">
-                        <div class="section-header">
-                            <h2 class="section-title">${genre.name} Anime</h2>
-                            <a href="#" class="view-all" onclick="filterByGenre('${genre.id}')">View All</a>
-                        </div>
-                        <div class="anime-grid">
-                            ${genreAnime.slice(0, 8).map(anime => `
-                                <div class="anime-card" onclick="selectAnime(${anime.id})">
-                                    <div class="genre-tag" style="background: ${genre.color}">
-                                        ${genre.name}
-                                    </div>
-                                    <img src="${anime.image}" alt="${anime.title}">
-                                    <div class="anime-card-content">
-                                        <h4>${anime.title}</h4>
-                                        <div class="meta">
-                                            <span>${anime.year}</span>
-                                            <span>${anime.episodes} EP</span>
-                                        </div>
-                                        <p class="description">${anime.description}</p>
-                                        <p class="episodes">${anime.status}</p>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </section>
-                `;
-            }).join('');
-        }
-
-        // Filter by genre
-        function filterByGenre(genreId) {
-            currentGenre = genreId;
-            loadGenreTabs();
+        function createContentSections() {
+            contentSections.innerHTML = '';
             
-            if (genreId === 'all') {
-                loadGenreSections();
-                return;
-            }
-
-            const filteredAnime = animeDatabase.filter(anime => anime.genre.includes(genreId));
-            genreSections.innerHTML = `
-                <section class="anime-section">
-                    <div class="section-header">
-                        <h2 class="section-title">${genres.find(g => g.id === genreId).name} Anime</h2>
-                        <a href="#" class="view-all" onclick="filterByGenre('all')">Back to All</a>
-                    </div>
-                    <div class="anime-grid">
-                        ${filteredAnime.map(anime => `
-                            <div class="anime-card" onclick="selectAnime(${anime.id})">
-                                <div class="genre-tag" style="background: ${getGenreColor(genreId)}">
-                                    ${genreId}
-                                </div>
-                                <img src="${anime.image}" alt="${anime.title}">
-                                <div class="anime-card-content">
-                                    <h4>${anime.title}</h4>
-                                    <div class="meta">
-                                        <span>${anime.year}</span>
-                                        <span>${anime.episodes} EP</span>
-                                    </div>
-                                    <p class="description">${anime.description}</p>
-                                    <p class="episodes">${anime.status}</p>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </section>
-            `;
-        }
-
-        // Get genre color
-        function getGenreColor(genreId) {
-            const genre = genres.find(g => g.id === genreId);
-            return genre ? genre.color : '#6c63ff';
-        }
-
-        // Select anime to watch
-        async function selectAnime(animeId) {
-            const anime = animeDatabase.find(a => a.id === animeId);
-            if (!anime) return;
-
-            currentAnime = anime;
-            currentEpisode = 1;
-            currentSeason = 1;
-            currentServerIndex = 0;
-
-            // Update UI
-            homepage.style.display = 'none';
-            watchPage.style.display = 'block';
-            currentAnimeTitle.textContent = anime.title;
-            episodeInfo.textContent = `Episode: ${currentEpisode}`;
-            serverInfo.textContent = "Loading players...";
-            prevEpisodeBtn.disabled = currentEpisode <= 1;
-            nextEpisodeBtn.disabled = currentEpisode >= anime.episodes;
-
-            // Update anime details
-            detailsTitle.textContent = anime.title;
-            detailsYear.textContent = anime.year;
-            detailsStatus.textContent = anime.status;
-            detailsEpisodes.textContent = `${anime.episodes} Episodes`;
-            detailsDescription.textContent = anime.description;
-            detailsPoster.src = anime.image;
-            detailsGenres.innerHTML = anime.genre.map(genre => `
-                <span class="genre-tag" style="background: ${getGenreColor(genre)}">${genre}</span>
-            `).join('');
-
-            // Setup episode grid
-            setupEpisodeGrid();
-
-            // Show loading
-            loading.style.display = 'flex';
-            playerFrame.style.display = 'none';
-
-            // Scroll to watch page
-            watchPage.scrollIntoView({ behavior: 'smooth' });
-
-            // Load players from API
-            await loadPlayers();
-        }
-
-        // Setup episode grid
-        function setupEpisodeGrid() {
-            episodeGrid.innerHTML = '';
-            const totalEpisodes = currentAnime.episodes || 24;
-
-            for (let i = 1; i <= totalEpisodes; i++) {
-                const episodeCard = document.createElement('div');
-                episodeCard.className = 'episode-card';
-                if (i === currentEpisode) episodeCard.classList.add('active');
-                episodeCard.textContent = i;
-                episodeCard.dataset.episode = i;
-
-                episodeCard.addEventListener('click', () => {
-                    currentEpisode = parseInt(episodeCard.dataset.episode);
-                    episodeInfo.textContent = `Episode: ${currentEpisode}`;
-                    prevEpisodeBtn.disabled = currentEpisode <= 1;
-                    nextEpisodeBtn.disabled = currentEpisode >= currentAnime.episodes;
-                    loadPlayers();
-                    updateEpisodeUI();
-                });
-
-                episodeGrid.appendChild(episodeCard);
-            }
-        }
-
-        // Update episode UI
-        function updateEpisodeUI() {
-            document.querySelectorAll('.episode-card').forEach(card => {
-                card.classList.remove('active');
-                if (parseInt(card.dataset.episode) === currentEpisode) {
-                    card.classList.add('active');
+            // Group by type
+            const types = ['anime', 'cartoon', 'movie'];
+            types.forEach(type => {
+                const typeContent = contentDatabase.filter(item => item.type === type);
+                if (typeContent.length > 0) {
+                    createContentSection(type.charAt(0).toUpperCase() + type.slice(1), typeContent);
                 }
             });
         }
 
-        // Load players from API
-        async function loadPlayers() {
-            if (!currentAnime) return;
+        function createContentSection(title, contentList) {
+            const section = document.createElement('div');
+            section.className = 'genre-row';
+
+            const sectionTitle = document.createElement('h2');
+            sectionTitle.className = 'genre-title';
+            sectionTitle.textContent = title;
+            section.appendChild(sectionTitle);
+
+            const row = document.createElement('div');
+            row.className = 'anime-row';
+
+            contentList.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'anime-card';
+                card.onclick = () => selectContent(item.id);
+
+                card.innerHTML = `
+                    <img src="${item.image}" alt="${item.title}">
+                    <div class="anime-info">
+                        <div class="anime-title">${item.title}</div>
+                        <div class="anime-meta">${item.type} • ${item.year}</div>
+                    </div>
+                `;
+
+                row.appendChild(card);
+            });
+
+            section.appendChild(row);
+            contentSections.appendChild(section);
+        }
+
+        async function selectContent(contentId) {
+            currentContent = contentDatabase.find(item => item.id === contentId);
+            if (!currentContent) return;
+
+            showLoading();
+            homepage.style.display = 'none';
+            watchPage.style.display = 'block';
+
+            // Update UI
+            watchTitle.textContent = currentContent.title;
+            detailsTitle.textContent = currentContent.title;
+            detailsMeta.textContent = `${currentContent.year} • ${currentContent.status} • ${currentContent.totalEpisodes} Episodes`;
+            detailsGenres.innerHTML = `<span class="genre-tag">${currentContent.type}</span>`;
+
+            setupEpisodeGrid();
+            await loadEpisode(1, 1);
+        }
+
+        function setupEpisodeGrid() {
+            episodeGrid.innerHTML = '';
+            const totalEpisodes = currentContent.totalEpisodes;
+
+            for (let i = 1; i <= Math.min(totalEpisodes, 50); i++) {
+                const card = document.createElement('div');
+                card.className = 'episode-card';
+                card.textContent = i;
+                card.onclick = () => {
+                    currentEpisode = i;
+                    loadEpisode(1, i);
+                    updateEpisodeUI();
+                };
+                episodeGrid.appendChild(card);
+            }
+
+            updateEpisodeUI();
+        }
+
+        async function loadEpisode(season, episode) {
+            showLoading();
+            serverInfo.textContent = 'Loading servers...';
 
             try {
-                const apiUrl = `${API_BASE_URL}/${currentAnime.id}/${currentSeason}/${currentEpisode}`;
-                console.log('📡 Fetching from:', apiUrl);
-
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error(`API error: ${response.status}`);
-
+                const response = await fetch(`${API_BASE_URL}/${currentContent.id}/${season}/${episode}`);
                 const data = await response.json();
 
-                if (data.success && data.players && data.players.length > 0) {
-                    currentPlayers = data.players.filter(player => player.type === 'iframe');
-                    if (currentPlayers.length === 0) throw new Error('No iframe players available');
+                if (data.success) {
+                    currentPlayers = data.players;
                     updateServerSelector();
-                    loadCurrentServer();
-                    currentAnimeTitle.textContent = data.title || `${currentAnime.title} - Episode ${currentEpisode}`;
-                    serverInfo.textContent = `${currentPlayers.length} servers available`;
-                } else {
-                    throw new Error('No players found');
+                    
+                    if (currentPlayers.length > 0) {
+                        currentServerIndex = 0;
+                        switchServer();
+                    }
                 }
             } catch (error) {
-                console.error('Error loading players:', error);
-                currentPlayers = [
-                    { name: "StreamTape (HD)", url: "https://streamtape.com/e/demo", type: "iframe", quality: "HD" },
-                    { name: "DoodStream (HD)", url: "https://dood.watch/e/demo", type: "iframe", quality: "HD" }
-                ];
-                updateServerSelector();
-                loadCurrentServer();
-                serverInfo.textContent = "Using fallback servers";
+                console.error('Error:', error);
+                serverInfo.textContent = 'Error loading content';
             }
+
+            hideLoading();
         }
 
-        // Update server selector dropdown
-        function updateServerSelector() {
-            serverSelect.innerHTML = currentPlayers.map((player, index) => 
-                `<option value="${index}">${player.name} (${player.quality})</option>`
-            ).join('');
-            serverSelect.style.display = currentPlayers.length > 1 ? 'block' : 'none';
-        }
-
-        // Load current selected server
-        function loadCurrentServer() {
+        function switchServer() {
             if (currentPlayers.length === 0) return;
-
+            currentServerIndex = parseInt(serverSelect.value);
             const player = currentPlayers[currentServerIndex];
             playerFrame.src = player.url;
-            
-            setTimeout(() => {
-                loading.style.display = 'none';
-                playerFrame.style.display = 'block';
-                serverInfo.textContent = `Playing on ${player.name}`;
-            }, 1500);
+            serverInfo.textContent = `Playing on ${player.name}`;
         }
 
-        // Switch server
-        function switchServer() {
-            currentServerIndex = parseInt(serverSelect.value);
-            loading.style.display = 'flex';
-            playerFrame.style.display = 'none';
-            serverInfo.textContent = "Switching server...";
-            loadCurrentServer();
+        function updateServerSelector() {
+            serverSelect.innerHTML = currentPlayers.map((player, index) => 
+                `<option value="${index}">${player.name}</option>`
+            ).join('');
         }
 
-        // Change episode
         function changeEpisode(direction) {
-            if (!currentAnime) return;
-
             const newEpisode = currentEpisode + direction;
-            if (newEpisode >= 1 && newEpisode <= currentAnime.episodes) {
+            if (newEpisode >= 1 && newEpisode <= currentContent.totalEpisodes) {
                 currentEpisode = newEpisode;
-                episodeInfo.textContent = `Episode: ${currentEpisode}`;
-                prevEpisodeBtn.disabled = currentEpisode <= 1;
-                nextEpisodeBtn.disabled = currentEpisode >= currentAnime.episodes;
-                serverInfo.textContent = "Loading episode...";
-                loadPlayers();
+                loadEpisode(1, newEpisode);
                 updateEpisodeUI();
             }
         }
 
-        // Search anime
-        function searchAnime() {
-            const query = searchInput.value.toLowerCase().trim();
-            if (query === '') {
-                filterByGenre('all');
-                return;
-            }
-
-            const filtered = animeDatabase.filter(anime => 
-                anime.title.toLowerCase().includes(query) ||
-                anime.description.toLowerCase().includes(query) ||
-                anime.genre.some(g => g.toLowerCase().includes(query))
-            );
-
-            genreSections.innerHTML = `
-                <section class="anime-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Search Results for "${query}"</h2>
-                        <a href="#" class="view-all" onclick="filterByGenre('all')">Back to All</a>
-                    </div>
-                    <div class="anime-grid">
-                        ${filtered.map(anime => `
-                            <div class="anime-card" onclick="selectAnime(${anime.id})">
-                                <div class="genre-tag" style="background: ${getGenreColor(anime.genre[0])}">
-                                    ${anime.genre[0]}
-                                </div>
-                                <img src="${anime.image}" alt="${anime.title}">
-                                <div class="anime-card-content">
-                                    <h4>${anime.title}</h4>
-                                    <div class="meta">
-                                        <span>${anime.year}</span>
-                                        <span>${anime.episodes} EP</span>
-                                    </div>
-                                    <p class="description">${anime.description}</p>
-                                    <p class="episodes">${anime.status}</p>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </section>
-            `;
+        function updateEpisodeUI() {
+            prevEpisode.disabled = currentEpisode <= 1;
+            nextEpisode.disabled = currentEpisode >= currentContent.totalEpisodes;
+            
+            document.querySelectorAll('.episode-card').forEach((card, index) => {
+                card.classList.toggle('active', index + 1 === currentEpisode);
+            });
         }
 
-        // Show homepage
         function showHomepage() {
             watchPage.style.display = 'none';
             homepage.style.display = 'block';
-            currentAnime = null;
-            currentPlayers = [];
+            currentContent = null;
             playerFrame.src = '';
+        }
+
+        function filterByType(type) {
+            contentSections.innerHTML = '';
+            const filtered = contentDatabase.filter(item => item.type === type);
+            createContentSection(type.charAt(0).toUpperCase() + type.slice(1), filtered);
+        }
+
+        function performSearch() {
+            const query = searchInput.value.toLowerCase();
+            if (!query) {
+                createContentSections();
+                return;
+            }
+
+            const results = contentDatabase.filter(item => 
+                item.title.toLowerCase().includes(query)
+            );
+
+            contentSections.innerHTML = '';
+            if (results.length > 0) {
+                createContentSection(`Search Results for "${query}"`, results);
+            } else {
+                contentSections.innerHTML = '<h2 class="genre-title">No results found</h2>';
+            }
+        }
+
+        function showRandomContent() {
+            const randomContent = contentDatabase[Math.floor(Math.random() * contentDatabase.length)];
+            selectContent(randomContent.id);
+        }
+
+        function showLoading() {
             loading.style.display = 'flex';
-            playerFrame.style.display = 'none';
-            serverInfo.textContent = "Ready to play";
         }
 
-        // Setup event listeners
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
         function setupEventListeners() {
-            searchButton.addEventListener('click', searchAnime);
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') searchAnime();
+            window.addEventListener('scroll', () => {
+                document.getElementById('header').classList.toggle('scrolled', window.scrollY > 50);
             });
 
+            // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
-                if (!currentAnime) return;
-                switch (e.key) {
-                    case 'ArrowLeft':
-                        changeEpisode(-1);
-                        break;
-                    case 'ArrowRight':
-                        changeEpisode(1);
-                        break;
-                    case 'f':
-                    case 'F':
-                        if (playerFrame.requestFullscreen) playerFrame.requestFullscreen();
-                        break;
-                    case 's':
-                    case 'S':
-                        if (currentPlayers.length > 1) {
-                            currentServerIndex = (currentServerIndex + 1) % currentPlayers.length;
-                            serverSelect.value = currentServerIndex;
-                            switchServer();
-                        }
-                        break;
-                }
-            });
-
-            document.addEventListener('keydown', (e) => {
-                if (e.key === '/' && e.target.tagName !== 'INPUT') {
-                    e.preventDefault();
-                    searchInput.focus();
-                }
+                if (!currentContent) return;
+                if (e.key === 'ArrowLeft') changeEpisode(-1);
+                if (e.key === 'ArrowRight') changeEpisode(1);
             });
         }
 
-        // Initialize when page loads
+        // Initialize
         document.addEventListener('DOMContentLoaded', init);
+
+        // Mock database (in real implementation, this would come from the API)
+        const ANIMEWORLD_DATABASE = {
+            // ... (the same database object from the API)
+        };
     </script>
 </body>
 </html>
