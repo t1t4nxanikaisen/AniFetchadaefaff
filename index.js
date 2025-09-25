@@ -289,7 +289,8 @@ app.get('/', (req, res) => {
             '/api/health': 'Health check',
             '/api/anime/:anilistId/:season/:episode': 'Get anime episode',
             '/api/search/:query': 'Search content',
-            '/api/cartoon/:query/:episode': 'Get cartoon episode'
+            '/api/cartoon/:query/:episode': 'Get cartoon episode',
+            '/api/popular': 'Get popular anime'
         }
     });
 });
@@ -566,6 +567,14 @@ app.use((err, req, res, next) => {
     res.status(500).json({
         success: false,
         error: 'Internal server error'
+    });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        error: 'Endpoint not found'
     });
 });
 
