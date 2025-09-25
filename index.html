@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnimeFlix Pro - Stream 2000+ Anime</title>
-    <link rel="icon" href="/favicon.ico">
+    <title>AnimeFlix - Stream 2000+ Anime</title>
     <style>
         * {
             margin: 0;
@@ -34,9 +33,6 @@
             margin-bottom: 30px;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
             border: 1px solid #25254d;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
         }
         
         .header-content {
@@ -116,7 +112,7 @@
             transform: translateY(-50%) scale(1.1);
         }
         
-        /* Main Content */
+        /* Main Content - UPDATED FOR BIGGER PLAYER */
         .main-content {
             display: grid;
             grid-template-columns: 1fr;
@@ -124,14 +120,13 @@
             margin-bottom: 40px;
         }
         
-        /* Player Section */
+        /* BIGGER Player Section */
         .player-section {
             background: #1a1a3a;
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
             border: 1px solid #25254d;
-            display: none;
         }
         
         .player-header {
@@ -169,12 +164,13 @@
             min-width: 200px;
         }
         
+        /* HUGE IFRAME CONTAINER */
         .iframe-container {
             background: #000;
             border-radius: 15px;
             overflow: hidden;
             position: relative;
-            height: 70vh;
+            height: 70vh; /* 70% of viewport height */
             min-height: 600px;
             margin-bottom: 25px;
             border: 3px solid #6c63ff;
@@ -254,36 +250,6 @@
             color: #6c63ff;
             font-size: 1.3rem;
             text-shadow: 0 0 10px rgba(108, 99, 255, 0.5);
-        }
-        
-        /* Episode List */
-        .episode-list {
-            margin-top: 30px;
-        }
-        
-        .episode-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-        }
-        
-        .episode-card {
-            background: #1a1a3a;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: background 0.3s;
-            border: 1px solid #25254d;
-        }
-        
-        .episode-card:hover {
-            background: #25254d;
-        }
-        
-        .episode-card.active {
-            background: #6c63ff;
-            color: white;
         }
         
         /* Genre Navigation */
@@ -426,7 +392,7 @@
             background: rgba(108, 99, 255, 0.9);
             color: white;
             padding: 5px 12px;
-            border-radius: 15px;
+                    border-radius: 15px;
             font-size: 0.8rem;
             font-weight: bold;
         }
@@ -535,10 +501,6 @@
                 flex-direction: column;
                 gap: 15px;
             }
-            
-            .episode-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
         }
         
         @media (max-width: 480px) {
@@ -564,68 +526,62 @@
                 </div>
                 <div class="search-bar">
                     <input type="text" id="searchInput" placeholder="Search 2000+ anime series...">
-                    <button id="searchButton" onclick="searchAnime()">🔍</button>
+                    <button onclick="searchAnime()">🔍</button>
                 </div>
             </div>
         </header>
 
-        <!-- Homepage Content -->
-        <div id="homepage">
-            <!-- Featured Anime -->
-            <section class="featured-anime">
-                <h2 class="featured-title">🔥 Premium Anime Experience</h2>
-                <p class="featured-subtitle">Watch 2000+ anime with perfect iframe embeds and instant loading</p>
-                <div class="featured-grid" id="featuredAnime">
-                    <!-- Featured anime will be loaded here -->
-                </div>
-            </section>
-
-            <!-- Genre Navigation -->
-            <section class="genre-navigation">
-                <div class="genre-tabs" id="genreTabs">
-                    <!-- Genre tabs will be loaded here -->
-                </div>
-            </section>
-
-            <!-- Genre Sections -->
-            <div id="genreSections">
-                <!-- Genre sections will be loaded here -->
+        <!-- Featured Anime -->
+        <section class="featured-anime">
+            <h2 class="featured-title">🔥 Premium Anime Experience</h2>
+            <p class="featured-subtitle">Watch 2000+ anime with perfect iframe embeds and instant loading</p>
+            <div class="featured-grid" id="featuredAnime">
+                <!-- Featured anime will be loaded here -->
             </div>
+        </section>
+
+        <!-- Genre Navigation -->
+        <section class="genre-navigation">
+            <div class="genre-tabs" id="genreTabs">
+                <!-- Genre tabs will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- BIG Player Section -->
+            <section class="player-section">
+                <div class="player-header">
+                    <h2 class="anime-title" id="currentAnimeTitle">Select an Anime to Start Watching</h2>
+                    <div class="server-selector">
+                        <select id="serverSelect" onchange="switchServer()" style="display: none;">
+                            <option value="0">Server 1 (HD)</option>
+                        </select>
+                        <div class="episode-info" id="serverInfo">Ready to play</div>
+                    </div>
+                </div>
+                
+                <!-- HUGE IFRAME CONTAINER -->
+                <div class="iframe-container">
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p style="font-size: 1.3rem;">Select an anime from below to load the player</p>
+                        <p style="color: #a0a0ff;">2000+ anime available with instant iframe embeds</p>
+                    </div>
+                    <iframe id="playerFrame" style="display: none;" allowfullscreen></iframe>
+                </div>
+                
+                <div class="episode-controls">
+                    <button class="episode-btn" id="prevEpisode" onclick="changeEpisode(-1)" disabled>⬅ Previous Episode</button>
+                    <div class="episode-info" id="episodeInfo">Episode: -</div>
+                    <button class="episode-btn" id="nextEpisode" onclick="changeEpisode(1)" disabled>Next Episode ➡</button>
+                </div>
+            </section>
         </div>
 
-        <!-- Watch Page -->
-        <div id="watchPage" class="player-section" style="display: none;">
-            <div class="player-header">
-                <h2 class="anime-title" id="currentAnimeTitle">Select an Anime to Start Watching</h2>
-                <div class="server-selector">
-                    <select id="serverSelect" onchange="switchServer()" style="display: none;">
-                        <option value="0">Server 1 (HD)</option>
-                    </select>
-                    <div class="episode-info" id="serverInfo">Ready to play</div>
-                </div>
-            </div>
-            
-            <div class="iframe-container">
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p style="font-size: 1.3rem;">Select an anime from below to load the player</p>
-                    <p style="color: #a0a0ff;">2000+ anime available with instant iframe embeds</p>
-                </div>
-                <iframe id="playerFrame" style="display: none;" allowfullscreen></iframe>
-            </div>
-            
-            <div class="episode-controls">
-                <button class="episode-btn" id="prevEpisode" onclick="changeEpisode(-1)" disabled>⬅ Previous Episode</button>
-                <div class="episode-info" id="episodeInfo">Episode: -</div>
-                <button class="episode-btn" id="nextEpisode" onclick="changeEpisode(1)" disabled>Next Episode ➡</button>
-            </div>
-            
-            <div class="episode-list">
-                <h2 class="section-title">Episodes</h2>
-                <div class="episode-grid" id="episodeGrid">
-                    <!-- Episode list will be populated by JavaScript -->
-                </div>
-            </div>
+        <!-- Genre Sections -->
+        <div id="genreSections">
+            <!-- Genre sections will be loaded here -->
         </div>
 
         <!-- Footer -->
@@ -654,45 +610,140 @@
     </div>
 
     <script>
-        // API Configuration
-        const API_BASE_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000' 
-            : window.location.origin;
-
-        // Anime Database
+        // COMPREHENSIVE ANIME DATABASE WITH GENRES
         const animeDatabase = [
             // Action Anime
-            { id: 21, title: "One Piece", slug: "one-piece", episodes: 1100, year: 1999, status: "Ongoing", genre: ["action", "adventure", "fantasy", "shounen"], description: "Join Monkey D. Luffy and his pirate crew in their epic quest for the ultimate treasure, the One Piece.", image: "https://via.placeholder.com/400/6c63ff/ffffff?text=One+Piece" },
-            { id: 20, title: "Naruto", slug: "naruto", episodes: 220, year: 2002, status: "Completed", genre: ["action", "adventure", "shounen"], description: "A young ninja's journey to become the strongest Hokage in his village.", image: "https://via.placeholder.com/400/ff6b6b/ffffff?text=Naruto" },
-            { id: 38000, title: "Demon Slayer", slug: "kimetsu-no-yaiba", episodes: 55, year: 2019, status: "Ongoing", genre: ["action", "fantasy", "supernatural"], description: "Tanjiro Kamado's quest to cure his sister and defeat powerful demons.", image: "https://via.placeholder.com/400/4ecdc4/ffffff?text=Demon+Slayer" },
+            {
+                id: 21, title: "One Piece", slug: "one-piece", episodes: 1100, year: 1999, status: "Ongoing",
+                genre: ["action", "adventure", "fantasy", "shounen"],
+                description: "Join Monkey D. Luffy and his pirate crew in their epic quest for the ultimate treasure, the One Piece.",
+                image: "https://via.placeholder.com/400/6c63ff/ffffff?text=One+Piece"
+            },
+            {
+                id: 20, title: "Naruto", slug: "naruto", episodes: 220, year: 2002, status: "Completed",
+                genre: ["action", "adventure", "shounen"],
+                description: "A young ninja's journey to become the strongest Hokage in his village.",
+                image: "https://via.placeholder.com/400/ff6b6b/ffffff?text=Naruto"
+            },
+            {
+                id: 38000, title: "Demon Slayer", slug: "kimetsu-no-yaiba", episodes: 55, year: 2019, status: "Ongoing",
+                genre: ["action", "fantasy", "supernatural"],
+                description: "Tanjiro Kamado's quest to cure his sister and defeat powerful demons.",
+                image: "https://via.placeholder.com/400/4ecdc4/ffffff?text=Demon+Slayer"
+            },
+
             // Fantasy Anime
-            { id: 113415, title: "Jujutsu Kaisen", slug: "jujutsu-kaisen", episodes: 47, year: 2020, status: "Ongoing", genre: ["action", "fantasy", "supernatural"], description: "A world of cursed energy and intense exorcism battles.", image: "https://via.placeholder.com/400/ffd166/ffffff?text=Jujutsu+Kaisen" },
-            { id: 41353, title: "Jujutsu Kaisen Season 2", slug: "jujutsu-kaisen", episodes: 23, year: 2023, status: "Completed", genre: ["action", "fantasy", "supernatural"], description: "The epic Shibuya Incident arc with intense battles.", image: "https://via.placeholder.com/400/ffd166/ffffff?text=Jujutsu+Kaisen+S2" },
+            {
+                id: 113415, title: "Jujutsu Kaisen", slug: "jujutsu-kaisen", episodes: 47, year: 2020, status: "Ongoing",
+                genre: ["action", "fantasy", "supernatural"],
+                description: "A world of cursed energy and intense exorcism battles.",
+                image: "https://via.placeholder.com/400/ffd166/ffffff?text=Jujutsu+Kaisen"
+            },
+            {
+                id: 41353, title: "Jujutsu Kaisen Season 2", slug: "jujutsu-kaisen", episodes: 23, year: 2023, status: "Completed",
+                genre: ["action", "fantasy", "supernatural"],
+                description: "The epic Shibuya Incident arc with intense battles.",
+                image: "https://via.placeholder.com/400/ffd166/ffffff?text=Jujutsu+Kaisen+S2"
+            },
+
             // Adventure Anime
-            { id: 11061, title: "Hunter x Hunter", slug: "hunter-x-hunter", episodes: 148, year: 2011, status: "Completed", genre: ["action", "adventure", "fantasy"], description: "Gon Freecss's journey to become a Hunter and find his father.", image: "https://via.placeholder.com/400/6c63ff/ffffff?text=Hunter+x+Hunter" },
+            {
+                id: 11061, title: "Hunter x Hunter", slug: "hunter-x-hunter", episodes: 148, year: 2011, status: "Completed",
+                genre: ["action", "adventure", "fantasy"],
+                description: "Gon Freecss's journey to become a Hunter and find his father.",
+                image: "https://via.placeholder.com/400/6c63ff/ffffff?text=Hunter+x+Hunter"
+            },
+
             // Drama Anime
-            { id: 175014, title: "Oshi no Ko", slug: "oshi-no-ko", episodes: 11, year: 2023, status: "Ongoing", genre: ["drama", "mystery", "supernatural"], description: "The dark side of the entertainment industry revealed.", image: "https://via.placeholder.com/400/ff6b6b/ffffff?text=Oshi+no+Ko" },
+            {
+                id: 175014, title: "Oshi no Ko", slug: "oshi-no-ko", episodes: 11, year: 2023, status: "Ongoing",
+                genre: ["drama", "mystery", "supernatural"],
+                description: "The dark side of the entertainment industry revealed.",
+                image: "https://via.placeholder.com/400/ff6b6b/ffffff?text=Oshi+no+Ko"
+            },
+
             // Comedy Anime
-            { id: 186417, title: "Spy x Family", slug: "spy-x-family", episodes: 37, year: 2022, status: "Ongoing", genre: ["action", "comedy", "slice of life"], description: "A spy, an assassin, and a telepath form a hilarious fake family.", image: "https://via.placeholder.com/400/4ecdc4/ffffff?text=Spy+x+Family" },
+            {
+                id: 186417, title: "Spy x Family", slug: "spy-x-family", episodes: 37, year: 2022, status: "Ongoing",
+                genre: ["action", "comedy", "slice of life"],
+                description: "A spy, an assassin, and a telepath form a hilarious fake family.",
+                image: "https://via.placeholder.com/400/4ecdc4/ffffff?text=Spy+x+Family"
+            },
+
             // Psychological Anime
-            { id: 1535, title: "Death Note", slug: "death-note", episodes: 37, year: 2006, status: "Completed", genre: ["mystery", "psychological", "supernatural"], description: "A notebook that can kill anyone whose name is written in it.", image: "https://via.placeholder.com/400/1a1a3a/ffffff?text=Death+Note" },
+            {
+                id: 1535, title: "Death Note", slug: "death-note", episodes: 37, year: 2006, status: "Completed",
+                genre: ["mystery", "psychological", "supernatural"],
+                description: "A notebook that can kill anyone whose name is written in it.",
+                image: "https://via.placeholder.com/400/1a1a3a/ffffff?text=Death+Note"
+            },
+
             // Horror Anime
-            { id: 16498, title: "Attack on Titan", slug: "shingeki-no-kyojin", episodes: 88, year: 2013, status: "Completed", genre: ["action", "drama", "fantasy", "horror"], description: "Humanity's desperate struggle against giant humanoid creatures.", image: "https://via.placeholder.com/400/25254d/ffffff?text=Attack+on+Titan" },
+            {
+                id: 16498, title: "Attack on Titan", slug: "shingeki-no-kyojin", episodes: 88, year: 2013, status: "Completed",
+                genre: ["action", "drama", "fantasy", "horror"],
+                description: "Humanity's desperate struggle against giant humanoid creatures.",
+                image: "https://via.placeholder.com/400/25254d/ffffff?text=Attack+on+Titan"
+            },
+
             // Romance Anime
-            { id: 101922, title: "Kaguya-sama: Love is War", slug: "kaguya-sama-love-is-war", episodes: 37, year: 2019, status: "Completed", genre: ["comedy", "romance", "psychological"], description: "Two geniuses try to make the other confess their love first.", image: "https://via.placeholder.com/400/ff6b6b/ffffff?text=Kaguya-sama" },
+            {
+                id: 101922, title: "Kaguya-sama: Love is War", slug: "kaguya-sama-love-is-war", episodes: 37, year: 2019, status: "Completed",
+                genre: ["comedy", "romance", "psychological"],
+                description: "Two geniuses try to make the other confess their love first.",
+                image: "https://via.placeholder.com/400/ff6b6b/ffffff?text=Kaguya-sama"
+            },
+
             // Sci-Fi Anime
-            { id: 9253, title: "Steins;Gate", slug: "steinsgate", episodes: 24, year: 2011, status: "Completed", genre: ["sci-fi", "thriller", "drama"], description: "Time travel experiments lead to unexpected consequences.", image: "https://via.placeholder.com/400/4ecdc4/ffffff?text=Steins+Gate" },
+            {
+                id: 9253, title: "Steins;Gate", slug: "steinsgate", episodes: 24, year: 2011, status: "Completed",
+                genre: ["sci-fi", "thriller", "drama"],
+                description: "Time travel experiments lead to unexpected consequences.",
+                image: "https://via.placeholder.com/400/4ecdc4/ffffff?text=Steins+Gate"
+            },
+
             // Sports Anime
-            { id: 18671, title: "Haikyu!!", slug: "haikyuu", episodes: 85, year: 2014, status: "Completed", genre: ["sports", "comedy", "drama"], description: "A short boy's journey to become a volleyball champion.", image: "https://via.placeholder.com/400/ffd166/ffffff?text=Haikyu" },
-            // Additional Anime
-            { id: 104578, title: "Vinland Saga", slug: "vinland-saga", episodes: 48, year: 2019, status: "Ongoing", genre: ["action", "historical", "drama"], description: "Viking adventures and revenge in medieval Europe.", image: "https://via.placeholder.com/400/1a535c/ffffff?text=Vinland+Saga" },
-            { id: 101759, title: "My Hero Academia", slug: "my-hero-academia", episodes: 138, year: 2016, status: "Ongoing", genre: ["action", "superhero", "shounen"], description: "A world where superpowers are the norm.", image: "https://via.placeholder.com/400/6a0572/ffffff?text=MHA" },
-            { id: 24701, title: "Re:Zero", slug: "rezero", episodes: 50, year: 2016, status: "Ongoing", genre: ["fantasy", "drama", "psychological"], description: "A boy transported to another world with the power to return by death.", image: "https://via.placeholder.com/400/ff6b6b/ffffff?text=ReZero" },
-            { id: 25519, title: "Konosuba", slug: "konosuba", episodes: 20, year: 2016, status: "Completed", genre: ["comedy", "fantasy", "adventure"], description: "A hilarious fantasy adventure with useless goddesses.", image: "https://via.placeholder.com/400/4ecdc4/ffffff?text=Konosuba" },
-            { id: 23289, title: "Overlord", slug: "overlord", episodes: 52, year: 2015, status: "Ongoing", genre: ["action", "fantasy", "isekai"], description: "A player trapped in a game world as his powerful character.", image: "https://via.placeholder.com/400/ffd166/ffffff?text=Overlord" }
+            {
+                id: 18671, title: "Haikyu!!", slug: "haikyuu", episodes: 85, year: 2014, status: "Completed",
+                genre: ["sports", "comedy", "drama"],
+                description: "A short boy's journey to become a volleyball champion.",
+                image: "https://via.placeholder.com/400/ffd166/ffffff?text=Haikyu"
+            },
+
+            // Add 50+ more anime across different genres...
+            {
+                id: 104578, title: "Vinland Saga", slug: "vinland-saga", episodes: 48, year: 2019, status: "Ongoing",
+                genre: ["action", "historical", "drama"],
+                description: "Viking adventures and revenge in medieval Europe.",
+                image: "https://via.placeholder.com/400/1a535c/ffffff?text=Vinland+Saga"
+            },
+            {
+                id: 101759, title: "My Hero Academia", slug: "my-hero-academia", episodes: 138, year: 2016, status: "Ongoing",
+                genre: ["action", "superhero", "shounen"],
+                description: "A world where superpowers are the norm.",
+                image: "https://via.placeholder.com/400/6a0572/ffffff?text=MHA"
+            },
+            {
+                id: 24701, title: "Re:Zero", slug: "rezero", episodes: 50, year: 2016, status: "Ongoing",
+                genre: ["fantasy", "drama", "psychological"],
+                description: "A boy transported to another world with the power to return by death.",
+                image: "https://via.placeholder.com/400/ff6b6b/ffffff?text=ReZero"
+            },
+            {
+                id: 25519, title: "Konosuba", slug: "konosuba", episodes: 20, year: 2016, status: "Completed",
+                genre: ["comedy", "fantasy", "adventure"],
+                description: "A hilarious fantasy adventure with useless goddesses.",
+                image: "https://via.placeholder.com/400/4ecdc4/ffffff?text=Konosuba"
+            },
+            {
+                id: 23289, title: "Overlord", slug: "overlord", episodes: 52, year: 2015, status: "Ongoing",
+                genre: ["action", "fantasy", "isekai"],
+                description: "A player trapped in a game world as his powerful character.",
+                image: "https://via.placeholder.com/400/ffd166/ffffff?text=Overlord"
+            }
         ];
 
-        // Genre Definitions
+        // GENRE DEFINITIONS
         const genres = [
             { id: "all", name: "All Anime", color: "#6c63ff" },
             { id: "action", name: "Action", color: "#ff6b6b" },
@@ -718,8 +769,6 @@
         let currentGenre = "all";
 
         // DOM elements
-        const homepage = document.getElementById('homepage');
-        const watchPage = document.getElementById('watchPage');
         const featuredAnime = document.getElementById('featuredAnime');
         const genreTabs = document.getElementById('genreTabs');
         const genreSections = document.getElementById('genreSections');
@@ -731,11 +780,8 @@
         const prevEpisodeBtn = document.getElementById('prevEpisode');
         const nextEpisodeBtn = document.getElementById('nextEpisode');
         const episodeInfo = document.getElementById('episodeInfo');
-        const episodeGrid = document.getElementById('episodeGrid');
         const totalAnime = document.getElementById('totalAnime');
         const activePlayers = document.getElementById('activePlayers');
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
 
         // Initialize the site
         function init() {
@@ -743,7 +789,6 @@
             loadFeaturedAnime();
             loadGenreSections();
             totalAnime.textContent = animeDatabase.length;
-            setupEventListeners();
         }
 
         // Load genre tabs
@@ -871,80 +916,44 @@
             currentServerIndex = 0;
 
             // Update UI
-            homepage.style.display = 'none';
-            watchPage.style.display = 'block';
             currentAnimeTitle.textContent = anime.title;
             episodeInfo.textContent = `Episode: ${currentEpisode}`;
             serverInfo.textContent = "Loading players...";
             prevEpisodeBtn.disabled = currentEpisode <= 1;
             nextEpisodeBtn.disabled = currentEpisode >= anime.episodes;
 
-            // Setup episode grid
-            setupEpisodeGrid();
-
             // Show loading
             loading.style.display = 'flex';
             playerFrame.style.display = 'none';
 
             // Scroll to player
-            watchPage.scrollIntoView({ behavior: 'smooth' });
+            document.querySelector('.player-section').scrollIntoView({ behavior: 'smooth' });
 
             // Load players from API
             await loadPlayers();
         }
 
-        // Setup episode grid
-        function setupEpisodeGrid() {
-            episodeGrid.innerHTML = '';
-            const totalEpisodes = currentAnime.episodes || 24;
-
-            for (let i = 1; i <= totalEpisodes; i++) {
-                const episodeCard = document.createElement('div');
-                episodeCard.className = 'episode-card';
-                if (i === currentEpisode) episodeCard.classList.add('active');
-                episodeCard.textContent = i;
-                episodeCard.dataset.episode = i;
-
-                episodeCard.addEventListener('click', () => {
-                    currentEpisode = parseInt(episodeCard.dataset.episode);
-                    episodeInfo.textContent = `Episode: ${currentEpisode}`;
-                    prevEpisodeBtn.disabled = currentEpisode <= 1;
-                    nextEpisodeBtn.disabled = currentEpisode >= currentAnime.episodes;
-                    loadPlayers();
-                    updateEpisodeUI();
-                });
-
-                episodeGrid.appendChild(episodeCard);
-            }
-        }
-
-        // Update episode UI
-        function updateEpisodeUI() {
-            document.querySelectorAll('.episode-card').forEach(card => {
-                card.classList.remove('active');
-                if (parseInt(card.dataset.episode) === currentEpisode) {
-                    card.classList.add('active');
-                }
-            });
-        }
-
-        // Load players from API
+        // Load players from your API
         async function loadPlayers() {
             if (!currentAnime) return;
 
             try {
-                const apiUrl = `${API_BASE_URL}/api/anime/${currentAnime.id}/1/${currentEpisode}`;
+                const apiUrl = `/api/anime/${currentAnime.id}/1/${currentEpisode}`;
                 console.log('📡 Fetching from:', apiUrl);
 
                 const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error(`API error: ${response.status}`);
-
                 const data = await response.json();
 
                 if (data.success && data.players && data.players.length > 0) {
                     currentPlayers = data.players;
+                    
+                    // Update server selector
                     updateServerSelector();
+                    
+                    // Load first player
                     loadCurrentServer();
+                    
+                    // Update active players count
                     activePlayers.textContent = parseInt(activePlayers.textContent) + 1;
                     serverInfo.textContent = `${currentPlayers.length} servers available`;
                 } else {
@@ -952,10 +961,26 @@
                 }
             } catch (error) {
                 console.error('Error loading players:', error);
+                // Fallback to demo players
                 currentPlayers = [
-                    { name: "StreamTape (HD)", url: "https://streamtape.com/e/demo", type: "iframe", quality: "HD" },
-                    { name: "DoodStream (HD)", url: "https://dood.watch/e/demo", type: "iframe", quality: "HD" },
-                    { name: "MixDrop (HD)", url: "https://mixdrop.co/e/demo", type: "iframe", quality: "HD" }
+                    {
+                        name: "StreamTape (HD)",
+                        url: "https://streamtape.com/e/demo",
+                        type: "iframe",
+                        quality: "HD"
+                    },
+                    {
+                        name: "DoodStream (HD)", 
+                        url: "https://dood.watch/e/demo",
+                        type: "iframe",
+                        quality: "HD"
+                    },
+                    {
+                        name: "MixDrop (HD)",
+                        url: "https://mixdrop.co/e/demo",
+                        type: "iframe",
+                        quality: "HD"
+                    }
                 ];
                 updateServerSelector();
                 loadCurrentServer();
@@ -978,6 +1003,7 @@
             const player = currentPlayers[currentServerIndex];
             playerFrame.src = player.url;
             
+            // Hide loading and show player after a delay
             setTimeout(() => {
                 loading.style.display = 'none';
                 playerFrame.style.display = 'block';
@@ -1006,14 +1032,13 @@
                 nextEpisodeBtn.disabled = currentEpisode >= currentAnime.episodes;
                 serverInfo.textContent = "Loading episode...";
                 loadPlayers();
-                updateEpisodeUI();
             }
         }
 
         // Search anime
         function searchAnime() {
-            const query = searchInput.value.toLowerCase().trim();
-            if (query === '') {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            if (query.trim() === '') {
                 filterByGenre('all');
                 return;
             }
@@ -1053,47 +1078,44 @@
             `;
         }
 
-        // Setup event listeners
-        function setupEventListeners() {
-            searchButton.addEventListener('click', searchAnime);
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') searchAnime();
-            });
-
-            document.addEventListener('keydown', (e) => {
-                if (!currentAnime) return;
-                switch (e.key) {
-                    case 'ArrowLeft':
-                        changeEpisode(-1);
-                        break;
-                    case 'ArrowRight':
-                        changeEpisode(1);
-                        break;
-                    case 'f':
-                    case 'F':
-                        if (playerFrame.requestFullscreen) playerFrame.requestFullscreen();
-                        break;
-                    case 's':
-                    case 'S':
-                        if (currentPlayers.length > 1) {
-                            const nextServer = (currentServerIndex + 1) % currentPlayers.length;
-                            serverSelect.value = nextServer;
-                            switchServer();
-                        }
-                        break;
-                }
-            });
-
-            document.addEventListener('keydown', (e) => {
-                if (e.key === '/' && e.target.tagName !== 'INPUT') {
-                    e.preventDefault();
-                    searchInput.focus();
-                }
-            });
-        }
-
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', init);
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (!currentAnime) return;
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                    changeEpisode(-1);
+                    break;
+                case 'ArrowRight':
+                    changeEpisode(1);
+                    break;
+                case 'f':
+                case 'F':
+                    if (playerFrame.requestFullscreen) {
+                        playerFrame.requestFullscreen();
+                    }
+                    break;
+                case 's':
+                case 'S':
+                    if (currentPlayers.length > 1) {
+                        const nextServer = (currentServerIndex + 1) % currentPlayers.length;
+                        serverSelect.value = nextServer;
+                        switchServer();
+                    }
+                    break;
+            }
+        });
+
+        // Auto-focus search on / key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === '/' && e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+        });
     </script>
 </body>
 </html>
