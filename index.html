@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AnimeFlix - Ultimate Anime Streaming</title>
-    <link rel="icon" href="/favicon.ico">
     <style>
         * {
             margin: 0;
@@ -235,6 +234,130 @@
             color: var(--gray);
         }
 
+        /* Watch Page Styles */
+        .watch-container {
+            padding-top: 100px;
+            min-height: 100vh;
+        }
+
+        .video-player-container {
+            width: 100%;
+            margin-bottom: 20px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-player {
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            position: relative;
+        }
+
+        .video-player iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .player-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: var(--card-bg);
+        }
+
+        .anime-title-large {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .episode-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .episode-selector select {
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: var(--light);
+        }
+
+        .episode-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .episode-btn {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .episode-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .episode-list {
+            margin-top: 30px;
+        }
+
+        .episode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .episode-card {
+            background: var(--card-bg);
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .episode-card:hover {
+            background: #222;
+        }
+
+        .episode-card.active {
+            background: var(--primary);
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* Modal for Video Player */
         .modal {
             display: none;
@@ -276,22 +399,6 @@
             color: var(--light);
             font-size: 24px;
             cursor: pointer;
-        }
-
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            height: 0;
-            overflow: hidden;
-        }
-
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
         }
 
         /* Footer */
@@ -376,6 +483,15 @@
             .anime-card img {
                 height: 220px;
             }
+
+            .player-controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .episode-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
         }
     </style>
 </head>
@@ -388,64 +504,94 @@
                 <nav>
                     <ul>
                         <li><a href="#" class="active">Home</a></li>
-                        <li><a href="#">Trending</a></li>
-                        <li><a href="#">My List</a></li>
-                        <li><a href="#">New Releases</a></li>
+                        <li><a href="#" id="trendingLink">Trending</a></li>
+                        <li><a href="#" id="myListLink">My List</a></li>
+                        <li><a href="#" id="newReleasesLink">New Releases</a></li>
                     </ul>
                 </nav>
                 <div class="search-bar">
-                    <input type="text" placeholder="Search anime...">
-                    <button>Search</button>
+                    <input type="text" id="searchInput" placeholder="Search anime...">
+                    <button id="searchButton">Search</button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Hero Section -->
-    <section class="hero">
+    <!-- Homepage Content -->
+    <div id="homepage">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>Unlimited Anime Streaming</h1>
+                    <p>Watch your favorite anime anytime, anywhere. With over 800+ titles across all genres, there's always something new to discover.</p>
+                    <button class="cta-button" id="startWatching">Start Watching Now</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Genre Navigation -->
+        <section class="genre-nav">
+            <div class="container">
+                <div class="genre-scroll" id="genreScroll">
+                    <!-- Genre buttons will be populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <main class="container">
+            <!-- Featured Section -->
+            <h2 class="section-title">Featured Anime</h2>
+            <div class="anime-grid" id="featuredAnime">
+                <!-- Featured anime will be populated by JavaScript -->
+            </div>
+
+            <!-- Genre Sections -->
+            <div id="genreSections">
+                <!-- Genre sections will be populated by JavaScript -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Watch Page -->
+    <div id="watchPage" class="watch-container" style="display: none;">
         <div class="container">
-            <div class="hero-content">
-                <h1>Unlimited Anime Streaming</h1>
-                <p>Watch your favorite anime anytime, anywhere. With over 800+ titles across all genres, there's always something new to discover.</p>
-                <button class="cta-button">Start Watching Now</button>
+            <div class="video-player-container">
+                <div class="video-player" id="videoPlayer">
+                    <!-- Video player will be populated by JavaScript -->
+                </div>
+                <div class="player-controls">
+                    <div class="anime-title-large" id="watchTitle">Anime Title</div>
+                    <div class="episode-selector">
+                        <span>Season:</span>
+                        <select id="seasonSelect">
+                            <option value="1">Season 1</option>
+                        </select>
+                        <span>Episode:</span>
+                        <select id="episodeSelect">
+                            <option value="1">Episode 1</option>
+                        </select>
+                        <div class="episode-nav">
+                            <button class="episode-btn" id="prevEpisode">Previous</button>
+                            <button class="episode-btn" id="nextEpisode">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="episode-list">
+                <h2 class="section-title">Episodes</h2>
+                <div class="episode-grid" id="episodeGrid">
+                    <!-- Episode list will be populated by JavaScript -->
+                </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Genre Navigation -->
-    <section class="genre-nav">
-        <div class="container">
-            <div class="genre-scroll" id="genreScroll">
-                <!-- Genre buttons will be populated by JavaScript -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Main Content -->
-    <main class="container">
-        <!-- Featured Section -->
-        <h2 class="section-title">Featured Anime</h2>
-        <div class="anime-grid" id="featuredAnime">
-            <!-- Featured anime will be populated by JavaScript -->
-        </div>
-
-        <!-- Genre Sections -->
-        <div id="genreSections">
-            <!-- Genre sections will be populated by JavaScript -->
-        </div>
-    </main>
-
-    <!-- Video Player Modal -->
-    <div class="modal" id="videoModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="modalTitle">Anime Title</div>
-                <button class="close-modal" id="closeModal">&times;</button>
-            </div>
-            <div class="video-container">
-                <iframe id="videoFrame" src="" allowfullscreen></iframe>
-            </div>
-        </div>
+    <!-- Loading Spinner -->
+    <div class="loading" id="loading" style="display: none;">
+        <div class="spinner"></div>
     </div>
 
     <!-- Footer -->
@@ -487,65 +633,64 @@
                 </div>
             </div>
             <div class="copyright">
-                &copy; 2025 AnimeFlix. All rights reserved. This is a demo site for educational purposes.
+                &copy; 2023 AnimeFlix. All rights reserved. This is a demo site for educational purposes.
             </div>
         </div>
     </footer>
 
     <script>
+        // API Configuration
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : window.location.origin;
+
         // Sample anime data with 800+ entries across multiple genres
+        // This would be expanded to include all 800+ anime in a real implementation
         const animeData = [
             // Action (100 entries)
-            { id: 1, title: "Attack on Titan", genre: ["Action", "Drama", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/10/47347.jpg", video: "https://www.youtube.com/embed/MGRm4IzK1SQ" },
-            { id: 2, title: "One Punch Man", genre: ["Action", "Comedy", "Superhero"], image: "https://cdn.myanimelist.net/images/anime/12/76049.jpg", video: "https://www.youtube.com/embed/Poo5lqoWSGw" },
-            { id: 3, title: "Naruto Shippuden", genre: ["Action", "Adventure", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/5/17407.jpg", video: "https://www.youtube.com/embed/-G9BqkgZXRA" },
-            { id: 4, title: "Demon Slayer", genre: ["Action", "Fantasy", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/1286/99889.jpg", video: "https://www.youtube.com/embed/VQGCKyvzIM4" },
-            { id: 5, title: "My Hero Academia", genre: ["Action", "Comedy", "Superhero"], image: "https://cdn.myanimelist.net/images/anime/10/78745.jpg", video: "https://www.youtube.com/embed/wIb3nnOeves" },
-            { id: 6, title: "Bleach", genre: ["Action", "Adventure", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/3/40451.jpg", video: "https://www.youtube.com/embed/4DkCtwk6aJQ" },
-            { id: 7, title: "Hunter x Hunter", genre: ["Action", "Adventure", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/11/33657.jpg", video: "https://www.youtube.com/embed/d6kBeJjTGnY" },
-            { id: 8, title: "One Piece", genre: ["Action", "Adventure", "Comedy"], image: "https://cdn.myanimelist.net/images/anime/6/73245.jpg", video: "https://www.youtube.com/embed/S8_YwFLCh4U" },
-            { id: 9, title: "Jujutsu Kaisen", genre: ["Action", "Fantasy", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/1171/109222.jpg", video: "https://www.youtube.com/embed/pkKu9hLT-t8" },
-            { id: 10, title: "Tokyo Ghoul", genre: ["Action", "Drama", "Horror"], image: "https://cdn.myanimelist.net/images/anime/1498/134234.jpg", video: "https://www.youtube.com/embed/vGuQeQsoRgU" },
+            { id: 21, title: "One Piece", genre: ["Action", "Adventure", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/6/73245.jpg", totalEpisodes: 1000 },
+            { id: 20, title: "Naruto", genre: ["Action", "Adventure", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/13/17405.jpg", totalEpisodes: 220 },
+            { id: 1735, title: "Naruto Shippuden", genre: ["Action", "Adventure", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/5/17407.jpg", totalEpisodes: 500 },
+            { id: 16498, title: "Attack on Titan", genre: ["Action", "Drama", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/10/47347.jpg", totalEpisodes: 75 },
+            { id: 11061, title: "Hunter x Hunter", genre: ["Action", "Adventure", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/11/33657.jpg", totalEpisodes: 148 },
+            { id: 38000, title: "Demon Slayer", genre: ["Action", "Fantasy", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/1286/99889.jpg", totalEpisodes: 55 },
+            { id: 101759, title: "My Hero Academia", genre: ["Action", "Comedy", "Superhero"], image: "https://cdn.myanimelist.net/images/anime/10/78745.jpg", totalEpisodes: 113 },
+            { id: 269, title: "Bleach", genre: ["Action", "Adventure", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/3/40451.jpg", totalEpisodes: 366 },
+            { id: 113415, title: "Jujutsu Kaisen", genre: ["Action", "Fantasy", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/1171/109222.jpg", totalEpisodes: 47 },
+            { id: 22199, title: "One Punch Man", genre: ["Action", "Comedy", "Superhero"], image: "https://cdn.myanimelist.net/images/anime/12/76049.jpg", totalEpisodes: 24 },
             
             // Adventure (100 entries)
-            { id: 101, title: "Made in Abyss", genre: ["Adventure", "Drama", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/6/86733.jpg", video: "https://www.youtube.com/embed/VxJdJd-aJkA" },
-            { id: 102, title: "Mushishi", genre: ["Adventure", "Mystery", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/2/73862.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 103, title: "Spice and Wolf", genre: ["Adventure", "Fantasy", "Romance"], image: "https://cdn.myanimelist.net/images/anime/5/59401.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
+            { id: 101922, title: "Kaguya-sama: Love is War", genre: ["Adventure", "Comedy", "Romance"], image: "https://cdn.myanimelist.net/images/anime/1295/106551.jpg", totalEpisodes: 37 },
+            { id: 104578, title: "Vinland Saga", genre: ["Adventure", "Action", "Drama"], image: "https://cdn.myanimelist.net/images/anime/1500/103005.jpg", totalEpisodes: 48 },
+            { id: 20787, title: "Sword Art Online", genre: ["Adventure", "Action", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/11/39717.jpg", totalEpisodes: 96 },
             
             // Comedy (100 entries)
-            { id: 201, title: "Gintama", genre: ["Action", "Comedy", "Sci-Fi"], image: "https://cdn.myanimelist.net/images/anime/10/73274.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 202, title: "Kaguya-sama: Love is War", genre: ["Comedy", "Romance", "School"], image: "https://cdn.myanimelist.net/images/anime/1295/106551.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 203, title: "Konosuba", genre: ["Adventure", "Comedy", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/8/77831.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
+            { id: 25519, title: "Konosuba", genre: ["Comedy", "Adventure", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/8/77831.jpg", totalEpisodes: 20 },
+            { id: 23755, title: "Mob Psycho 100", genre: ["Comedy", "Action", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/8/80956.jpg", totalEpisodes: 37 },
             
             // Drama (100 entries)
-            { id: 301, title: "Your Lie in April", genre: ["Drama", "Music", "Romance"], image: "https://cdn.myanimelist.net/images/anime/3/67177.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 302, title: "Violet Evergarden", genre: ["Drama", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/1795/95088.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 303, title: "Clannad: After Story", genre: ["Drama", "Romance", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/1299/110774.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
+            { id: 1535, title: "Death Note", genre: ["Drama", "Mystery", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/9/9453.jpg", totalEpisodes: 37 },
+            { id: 9253, title: "Steins;Gate", genre: ["Drama", "Sci-Fi", "Thriller"], image: "https://cdn.myanimelist.net/images/anime/5/73199.jpg", totalEpisodes: 24 },
             
             // Fantasy (100 entries)
-            { id: 401, title: "Re:Zero", genre: ["Drama", "Fantasy", "Thriller"], image: "https://cdn.myanimelist.net/images/anime/11/79410.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 402, title: "Sword Art Online", genre: ["Action", "Adventure", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/11/39717.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 403, title: "No Game No Life", genre: ["Adventure", "Comedy", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/1074/111944.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
+            { id: 24701, title: "Re:Zero", genre: ["Fantasy", "Drama", "Thriller"], image: "https://cdn.myanimelist.net/images/anime/11/79410.jpg", totalEpisodes: 50 },
+            { id: 23289, title: "Overlord", genre: ["Fantasy", "Action", "Adventure"], image: "https://cdn.myanimelist.net/images/anime/7/88019.jpg", totalEpisodes: 52 },
             
             // Romance (100 entries)
-            { id: 501, title: "Toradora!", genre: ["Comedy", "Drama", "Romance"], image: "https://cdn.myanimelist.net/images/anime/13/22128.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 502, title: "Fruits Basket", genre: ["Drama", "Fantasy", "Romance"], image: "https://cdn.myanimelist.net/images/anime/1346/108386.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 503, title: "Your Name", genre: ["Drama", "Romance", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/5/87048.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
+            { id: 2167, title: "Clannad", genre: ["Romance", "Drama", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/8/75329.jpg", totalEpisodes: 44 },
+            { id: 20047, title: "No Game No Life", genre: ["Romance", "Adventure", "Comedy"], image: "https://cdn.myanimelist.net/images/anime/1074/111944.jpg", totalEpisodes: 12 },
             
             // Sci-Fi (100 entries)
-            { id: 601, title: "Steins;Gate", genre: ["Drama", "Sci-Fi", "Thriller"], image: "https://cdn.myanimelist.net/images/anime/5/73199.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 602, title: "Psycho-Pass", genre: ["Action", "Sci-Fi", "Thriller"], image: "https://cdn.myanimelist.net/images/anime/1314/132941.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 603, title: "Cowboy Bebop", genre: ["Action", "Adventure", "Sci-Fi"], image: "https://cdn.myanimelist.net/images/anime/4/19644.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
+            { id: 12189, title: "Psycho-Pass", genre: ["Sci-Fi", "Action", "Thriller"], image: "https://cdn.myanimelist.net/images/anime/1314/132941.jpg", totalEpisodes: 41 },
+            { id: 20555, title: "Akame ga Kill", genre: ["Sci-Fi", "Action", "Fantasy"], image: "https://cdn.myanimelist.net/images/anime/1429/95946.jpg", totalEpisodes: 24 },
             
             // Slice of Life (100 entries)
-            { id: 701, title: "K-On!", genre: ["Comedy", "Music", "Slice of Life"], image: "https://cdn.myanimelist.net/images/anime/10/76120.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 702, title: "Barakamon", genre: ["Comedy", "Slice of Life"], image: "https://cdn.myanimelist.net/images/anime/5/59399.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 703, title: "Non Non Biyori", genre: ["Comedy", "Slice of Life"], image: "https://cdn.myanimelist.net/images/anime/12/49335.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
+            { id: 18671, title: "Haikyuu", genre: ["Slice of Life", "Sports", "Comedy"], image: "https://cdn.myanimelist.net/images/anime/7/76014.jpg", totalEpisodes: 85 },
+            { id: 21995, title: "Assassination Classroom", genre: ["Slice of Life", "Action", "Comedy"], image: "https://cdn.myanimelist.net/images/anime/5/75639.jpg", totalEpisodes: 47 },
             
             // Horror (100 entries)
-            { id: 801, title: "Another", genre: ["Horror", "Mystery", "Thriller"], image: "https://cdn.myanimelist.net/images/anime/4/75509.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 802, title: "Parasyte", genre: ["Action", "Horror", "Sci-Fi"], image: "https://cdn.myanimelist.net/images/anime/3/73178.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" },
-            { id: 803, title: "Higurashi", genre: ["Horror", "Mystery", "Supernatural"], image: "https://cdn.myanimelist.net/images/anime/13/22265.jpg", video: "https://www.youtube.com/embed/9l5KOX0Wr-k" }
+            { id: 20853, title: "Parasyte", genre: ["Horror", "Action", "Sci-Fi"], image: "https://cdn.myanimelist.net/images/anime/3/73178.jpg", totalEpisodes: 24 },
+            { id: 22319, title: "Tokyo Ghoul", genre: ["Horror", "Action", "Drama"], image: "https://cdn.myanimelist.net/images/anime/1498/134234.jpg", totalEpisodes: 48 }
             
             // Note: In a real implementation, we would have 800+ entries with all genres covered
         ];
@@ -554,15 +699,32 @@
         const allGenres = [...new Set(animeData.flatMap(anime => anime.genre))];
         
         // DOM Elements
+        const homepage = document.getElementById('homepage');
+        const watchPage = document.getElementById('watchPage');
         const genreScroll = document.getElementById('genreScroll');
         const featuredAnime = document.getElementById('featuredAnime');
         const genreSections = document.getElementById('genreSections');
         const footerGenres = document.getElementById('footerGenres');
-        const videoModal = document.getElementById('videoModal');
-        const videoFrame = document.getElementById('videoFrame');
-        const modalTitle = document.getElementById('modalTitle');
-        const closeModal = document.getElementById('closeModal');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const startWatching = document.getElementById('startWatching');
         const header = document.getElementById('header');
+        const loading = document.getElementById('loading');
+        
+        // Watch page elements
+        const videoPlayer = document.getElementById('videoPlayer');
+        const watchTitle = document.getElementById('watchTitle');
+        const seasonSelect = document.getElementById('seasonSelect');
+        const episodeSelect = document.getElementById('episodeSelect');
+        const prevEpisode = document.getElementById('prevEpisode');
+        const nextEpisode = document.getElementById('nextEpisode');
+        const episodeGrid = document.getElementById('episodeGrid');
+        
+        // Current anime state
+        let currentAnime = null;
+        let currentSeason = 1;
+        let currentEpisode = 1;
+        let currentPlayers = [];
 
         // Initialize the page
         function init() {
@@ -657,19 +819,181 @@
                 </div>
             `;
             
-            // Add click event to open video modal
+            // Add click event to open watch page
             card.addEventListener('click', () => {
-                openVideoModal(anime);
+                openWatchPage(anime);
             });
             
             return card;
         }
 
-        // Open video modal with selected anime
-        function openVideoModal(anime) {
-            modalTitle.textContent = anime.title;
-            videoFrame.src = anime.video;
-            videoModal.style.display = 'flex';
+        // Open watch page for selected anime
+        function openWatchPage(anime) {
+            currentAnime = anime;
+            currentSeason = 1;
+            currentEpisode = 1;
+            
+            // Show loading
+            showLoading();
+            
+            // Switch to watch page
+            homepage.style.display = 'none';
+            watchPage.style.display = 'block';
+            
+            // Update title
+            watchTitle.textContent = anime.title;
+            
+            // Setup season selector
+            setupSeasonSelector();
+            
+            // Setup episode selector and grid
+            setupEpisodeSelector();
+            
+            // Load the first episode
+            loadEpisode(currentSeason, currentEpisode);
+        }
+
+        // Setup season selector
+        function setupSeasonSelector() {
+            seasonSelect.innerHTML = '';
+            
+            // For simplicity, we'll assume 1 season for all anime
+            // In a real app, you would have actual season data
+            const option = document.createElement('option');
+            option.value = '1';
+            option.textContent = 'Season 1';
+            seasonSelect.appendChild(option);
+            
+            seasonSelect.addEventListener('change', () => {
+                currentSeason = parseInt(seasonSelect.value);
+                currentEpisode = 1;
+                setupEpisodeSelector();
+                loadEpisode(currentSeason, currentEpisode);
+            });
+        }
+
+        // Setup episode selector and grid
+        function setupEpisodeSelector() {
+            episodeSelect.innerHTML = '';
+            episodeGrid.innerHTML = '';
+            
+            const totalEpisodes = currentAnime.totalEpisodes || 24;
+            
+            // Create episode options
+            for (let i = 1; i <= totalEpisodes; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Episode ${i}`;
+                episodeSelect.appendChild(option);
+                
+                const episodeCard = document.createElement('div');
+                episodeCard.className = 'episode-card';
+                if (i === currentEpisode) episodeCard.classList.add('active');
+                episodeCard.textContent = i;
+                episodeCard.dataset.episode = i;
+                
+                episodeCard.addEventListener('click', () => {
+                    currentEpisode = i;
+                    loadEpisode(currentSeason, currentEpisode);
+                    updateEpisodeUI();
+                });
+                
+                episodeGrid.appendChild(episodeCard);
+            }
+            
+            episodeSelect.value = currentEpisode;
+            
+            episodeSelect.addEventListener('change', () => {
+                currentEpisode = parseInt(episodeSelect.value);
+                loadEpisode(currentSeason, currentEpisode);
+                updateEpisodeUI();
+            });
+            
+            // Setup navigation buttons
+            prevEpisode.addEventListener('click', () => {
+                if (currentEpisode > 1) {
+                    currentEpisode--;
+                    loadEpisode(currentSeason, currentEpisode);
+                    updateEpisodeUI();
+                }
+            });
+            
+            nextEpisode.addEventListener('click', () => {
+                if (currentEpisode < totalEpisodes) {
+                    currentEpisode++;
+                    loadEpisode(currentSeason, currentEpisode);
+                    updateEpisodeUI();
+                }
+            });
+            
+            updateEpisodeUI();
+        }
+
+        // Update episode UI state
+        function updateEpisodeUI() {
+            const totalEpisodes = currentAnime.totalEpisodes || 24;
+            
+            // Update selects
+            episodeSelect.value = currentEpisode;
+            seasonSelect.value = currentSeason;
+            
+            // Update episode cards
+            document.querySelectorAll('.episode-card').forEach(card => {
+                card.classList.remove('active');
+                if (parseInt(card.dataset.episode) === currentEpisode) {
+                    card.classList.add('active');
+                }
+            });
+            
+            // Update navigation buttons
+            prevEpisode.disabled = currentEpisode <= 1;
+            nextEpisode.disabled = currentEpisode >= totalEpisodes;
+        }
+
+        // Load episode from API
+        async function loadEpisode(season, episode) {
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/anime/${currentAnime.id}/${season}/${episode}`);
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentPlayers = data.players;
+                    
+                    // Use the first player by default
+                    if (currentPlayers.length > 0) {
+                        const player = currentPlayers[0];
+                        videoPlayer.innerHTML = `<iframe src="${player.url}" allowfullscreen></iframe>`;
+                    } else {
+                        videoPlayer.innerHTML = '<p>No players available for this episode.</p>';
+                    }
+                    
+                    watchTitle.textContent = data.title || `${currentAnime.title} - Episode ${episode}`;
+                } else {
+                    videoPlayer.innerHTML = '<p>Failed to load episode data.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading episode:', error);
+                videoPlayer.innerHTML = '<p>Error loading episode. Please try again.</p>';
+            }
+            
+            hideLoading();
+        }
+
+        // Show loading spinner
+        function showLoading() {
+            loading.style.display = 'flex';
+        }
+
+        // Hide loading spinner
+        function hideLoading() {
+            loading.style.display = 'none';
         }
 
         // Get random anime from the dataset
@@ -704,20 +1028,6 @@
                 });
             });
             
-            // Close modal
-            closeModal.addEventListener('click', () => {
-                videoModal.style.display = 'none';
-                videoFrame.src = '';
-            });
-            
-            // Close modal when clicking outside
-            videoModal.addEventListener('click', (e) => {
-                if (e.target === videoModal) {
-                    videoModal.style.display = 'none';
-                    videoFrame.src = '';
-                }
-            });
-            
             // Header scroll effect
             window.addEventListener('scroll', () => {
                 if (window.scrollY > 100) {
@@ -728,9 +1038,6 @@
             });
             
             // Search functionality
-            const searchInput = document.querySelector('.search-bar input');
-            const searchButton = document.querySelector('.search-bar button');
-            
             searchButton.addEventListener('click', performSearch);
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -738,41 +1045,65 @@
                 }
             });
             
-            function performSearch() {
-                const query = searchInput.value.toLowerCase().trim();
-                if (query) {
-                    // Filter anime by title
-                    const results = animeData.filter(anime => 
-                        anime.title.toLowerCase().includes(query)
-                    );
+            // Start watching button
+            startWatching.addEventListener('click', () => {
+                const randomAnime = getRandomAnime(1)[0];
+                openWatchPage(randomAnime);
+            });
+            
+            // Navigation links
+            document.getElementById('trendingLink').addEventListener('click', (e) => {
+                e.preventDefault();
+                // In a real app, this would filter to trending anime
+                alert('Trending page would show popular anime');
+            });
+            
+            document.getElementById('myListLink').addEventListener('click', (e) => {
+                e.preventDefault();
+                alert('My List page would show saved anime');
+            });
+            
+            document.getElementById('newReleasesLink').addEventListener('click', (e) => {
+                e.preventDefault();
+                alert('New Releases page would show recently added anime');
+            });
+        }
+
+        // Perform search
+        function performSearch() {
+            const query = searchInput.value.toLowerCase().trim();
+            if (query) {
+                // Filter anime by title
+                const results = animeData.filter(anime => 
+                    anime.title.toLowerCase().includes(query)
+                );
+                
+                // Clear current content
+                featuredAnime.innerHTML = '';
+                genreSections.innerHTML = '';
+                
+                // Display search results
+                if (results.length > 0) {
+                    const title = document.createElement('h2');
+                    title.className = 'section-title';
+                    title.textContent = `Search Results for "${query}"`;
+                    genreSections.appendChild(title);
                     
-                    // Clear current content
-                    featuredAnime.innerHTML = '';
-                    genreSections.innerHTML = '';
+                    const grid = document.createElement('div');
+                    grid.className = 'anime-grid';
                     
-                    // Display search results
-                    if (results.length > 0) {
-                        const title = document.createElement('h2');
-                        title.className = 'section-title';
-                        title.textContent = `Search Results for "${query}"`;
-                        genreSections.appendChild(title);
-                        
-                        const grid = document.createElement('div');
-                        grid.className = 'anime-grid';
-                        
-                        results.forEach(anime => {
-                            const card = createAnimeCard(anime);
-                            grid.appendChild(card);
-                        });
-                        
-                        genreSections.appendChild(grid);
-                    } else {
-                        genreSections.innerHTML = `<h2 class="section-title">No results found for "${query}"</h2>`;
-                    }
+                    results.forEach(anime => {
+                        const card = createAnimeCard(anime);
+                        grid.appendChild(card);
+                    });
                     
-                    // Scroll to results
-                    genreSections.scrollIntoView({ behavior: 'smooth' });
+                    genreSections.appendChild(grid);
+                } else {
+                    genreSections.innerHTML = `<h2 class="section-title">No results found for "${query}"</h2>`;
                 }
+                
+                // Scroll to results
+                genreSections.scrollIntoView({ behavior: 'smooth' });
             }
         }
 
