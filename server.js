@@ -1,7 +1,7 @@
-// api/anime.js - Backend API Server
+// server.js - Auto-Scraping API for AnimeWorld
+const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const express = require('express');
 const cors = require('cors');
 
 const app = express();
@@ -10,300 +10,571 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// COMPLETE ANIMEWORLD DATABASE
-const ANIMEWORLD_DATABASE = {
-    // Popular Anime
-    '1': { slug: 'cowboy-bebop', title: 'Cowboy Bebop', type: 'anime', episodes: 26 },
-    '2': { slug: 'berserk', title: 'Berserk', type: 'anime', episodes: 25 },
-    '3': { slug: 'ghost-in-the-shell-arise', title: 'Ghost in the Shell: Arise', type: 'anime', episodes: 4 },
-    '4': { slug: 'death-note', title: 'Death Note', type: 'anime', episodes: 37 },
-    '5': { slug: 'naruto-shippuden', title: 'Naruto Shippuden', type: 'anime', episodes: 500 },
-    '6': { slug: 'one-piece', title: 'One Piece', type: 'anime', episodes: 1100 },
-    '7': { slug: 'attack-on-titan', title: 'Attack on Titan', type: 'anime', episodes: 88 },
-    '8': { slug: 'demon-slayer', title: 'Demon Slayer', type: 'anime', episodes: 55 },
-    '9': { slug: 'jujutsu-kaisen', title: 'Jujutsu Kaisen', type: 'anime', episodes: 47 },
-    '10': { slug: 'my-hero-academia', title: 'My Hero Academia', type: 'anime', episodes: 138 },
-
-    // Cartoons
-    '101': { slug: 'adventure-time', title: 'Adventure Time', type: 'cartoon', episodes: 283 },
-    '102': { slug: 'rick-and-morty', title: 'Rick and Morty', type: 'cartoon', episodes: 61 },
-    '103': { slug: 'south-park', title: 'South Park', type: 'cartoon', episodes: 327 },
-    '104': { slug: 'family-guy', title: 'Family Guy', type: 'cartoon', episodes: 423 },
-    '105': { slug: 'the-simpsons', title: 'The Simpsons', type: 'cartoon', episodes: 756 },
-
-    // More content...
-    '11': { slug: 'tokyo-revengers', title: 'Tokyo Revengers', type: 'anime', episodes: 37 },
-    '12': { slug: 'spy-x-family', title: 'Spy x Family', type: 'anime', episodes: 37 },
-    '13': { slug: 'chainsaw-man', title: 'Chainsaw Man', type: 'anime', episodes: 12 },
-    '14': { slug: 'dragon-ball', title: 'Dragon Ball', type: 'anime', episodes: 153 },
-    '15': { slug: 'dragon-ball-z', title: 'Dragon Ball Z', type: 'anime', episodes: 291 },
-    '16': { slug: 'naruto', title: 'Naruto', type: 'anime', episodes: 220 },
-    '17': { slug: 'bleach', title: 'Bleach', type: 'anime', episodes: 366 },
-    '18': { slug: 'fairy-tail', title: 'Fairy Tail', type: 'anime', episodes: 328 },
-    '19': { slug: 'hunter-x-hunter', title: 'Hunter x Hunter', type: 'anime', episodes: 148 },
-    '20': { slug: 'one-punch-man', title: 'One Punch Man', type: 'anime', episodes: 24 }
-};
-
+// AnimeWorld Configuration
 const ANIMEWORLD_CONFIG = {
     baseUrl: 'https://watchanimeworld.in',
     headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://watchanimeworld.in/'
     }
 };
 
-// Enhanced player extraction
-function extractPlayersAggressive(html, baseUrl) {
-    const $ = cheerio.load(html);
-    const players = [];
-    const foundUrls = new Set();
+// AniList API Configuration
+const ANILIST_CONFIG = {
+    baseUrl: 'https://graphql.anilist.co',
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+};
 
-    console.log('🔍 Extracting players from AnimeWorld...');
-
-    // 1. Direct iframes
-    $('iframe[src]').each((i, el) => {
-        let src = $(el).attr('src');
-        if (src) {
-            src = normalizeUrl(src, baseUrl);
-            if (src && !foundUrls.has(src)) {
-                foundUrls.add(src);
-                players.push({
-                    name: `Server ${players.length + 1}`,
-                    url: src,
-                    type: 'iframe',
-                    quality: 'HD'
-                });
+// GraphQL Query to get anime info by ID
+const ANIME_QUERY = `
+    query ($id: Int) {
+        Media (id: $id, type: ANIME) {
+            id
+            title {
+                romaji
+                english
+                native
             }
-        }
-    });
-
-    // 2. Video elements
-    $('video source[src], video[src]').each((i, el) => {
-        let src = $(el).attr('src');
-        if (src) {
-            src = normalizeUrl(src, baseUrl);
-            if (src && !foundUrls.has(src)) {
-                foundUrls.add(src);
-                players.push({
-                    name: `Direct Video ${players.length + 1}`,
-                    url: src,
-                    type: 'direct',
-                    quality: 'Auto'
-                });
+            description
+            episodes
+            status
+            duration
+            coverImage {
+                large
             }
+            genres
+            averageScore
+            siteUrl
         }
-    });
+    }
+`;
 
-    // 3. JavaScript extraction
-    $('script').each((i, el) => {
-        const scriptContent = $(el).html();
-        if (scriptContent) {
-            const patterns = [
-                /(?:src|file|url):\s*["'](https?:\/\/[^\s"']*streamtape[^\s"']*)["']/gi,
-                /(?:src|file|url):\s*["'](https?:\/\/[^\s"']*dood[^\s"']*)["']/gi,
-                /(?:src|file|url):\s*["'](https?:\/\/[^\s"']*mixdrop[^\s"']*)["']/gi,
-                /(?:src|file|url):\s*["'](https?:\/\/[^\s"']*\.(?:mp4|m3u8)[^\s"']*)["']/gi,
-            ];
-
-            patterns.forEach(pattern => {
-                const matches = scriptContent.match(pattern);
-                if (matches) {
-                    matches.forEach(match => {
-                        const urlMatch = match.match(/(https?:\/\/[^\s"']+)/);
-                        if (urlMatch) {
-                            const url = normalizeUrl(urlMatch[1], baseUrl);
-                            if (url && !foundUrls.has(url)) {
-                                foundUrls.add(url);
-                                players.push({
-                                    name: `Script Player ${players.length + 1}`,
-                                    url: url,
-                                    type: 'script',
-                                    quality: 'HD'
-                                });
-                            }
-                        }
-                    });
+// GraphQL Query to search anime by title
+const SEARCH_QUERY = `
+    query ($search: String, $type: MediaType) {
+        Page {
+            media(search: $search, type: $type) {
+                id
+                title {
+                    romaji
+                    english
+                    native
                 }
-            });
+                episodes
+                coverImage {
+                    large
+                }
+                genres
+                averageScore
+            }
         }
-    });
+    }
+`;
 
-    return players;
+// Convert AniList title to AnimeWorld slug
+function titleToSlug(title) {
+    return title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
 }
 
-function normalizeUrl(url, baseUrl) {
-    if (!url) return null;
-    if (url.startsWith('//')) return 'https:' + url;
-    if (url.startsWith('/')) return ANIMEWORLD_CONFIG.baseUrl + url;
-    if (url.startsWith('./')) return baseUrl + url.substring(1);
-    return url.startsWith('http') ? url : null;
+// Extract players from AnimeWorld page
+async function extractPlayersFromAnimeWorld(animeSlug, episode) {
+    const players = [];
+    
+    // Try multiple URL patterns
+    const urlPatterns = [
+        `${ANIMEWORLD_CONFIG.baseUrl}/episode/${animeSlug}-${episode}/`,
+        `${ANIMEWORLD_CONFIG.baseUrl}/episode/${animeSlug}-episode-${episode}/`,
+        `${ANIMEWORLD_CONFIG.baseUrl}/watch/${animeSlug}-episode-${episode}/`,
+        `${ANIMEWORLD_CONFIG.baseUrl}/episode/${animeSlug}-ep-${episode}/`,
+        `${ANIMEWORLD_CONFIG.baseUrl}/series/${animeSlug}/episode-${episode}/`
+    ];
+
+    for (const url of urlPatterns) {
+        try {
+            console.log(`🔍 Trying URL: ${url}`);
+            const response = await axios.get(url, {
+                headers: ANIMEWORLD_CONFIG.headers,
+                timeout: 10000
+            });
+
+            if (response.status === 200) {
+                const $ = cheerio.load(response.data);
+                
+                // Extract iframes
+                $('iframe[src]').each((i, el) => {
+                    let src = $(el).attr('src');
+                    if (src) {
+                        if (src.startsWith('//')) src = 'https:' + src;
+                        if (src.startsWith('/')) src = ANIMEWORLD_CONFIG.baseUrl + src;
+                        
+                        if (src.includes('streamtape') || src.includes('dood') || src.includes('mixdrop')) {
+                            players.push({
+                                name: `Server ${players.length + 1}`,
+                                url: src,
+                                type: 'iframe',
+                                quality: 'HD',
+                                source: 'direct-iframe'
+                            });
+                        }
+                    }
+                });
+
+                // Extract video elements
+                $('video source[src]').each((i, el) => {
+                    const src = $(el).attr('src');
+                    if (src && src.startsWith('http')) {
+                        players.push({
+                            name: `Direct Video ${players.length + 1}`,
+                            url: src,
+                            type: 'direct',
+                            quality: 'Auto',
+                            source: 'video-source'
+                        });
+                    }
+                });
+
+                // Extract from scripts
+                $('script').each((i, el) => {
+                    const scriptContent = $(el).html();
+                    if (scriptContent) {
+                        // StreamTape patterns
+                        const streamtapeMatches = scriptContent.match(/https?:\/\/[^\s"']*streamtape\.com\/[^\s"']*\/[^\s"']*/gi);
+                        if (streamtapeMatches) {
+                            streamtapeMatches.forEach(match => {
+                                players.push({
+                                    name: `StreamTape ${players.length + 1}`,
+                                    url: match,
+                                    type: 'iframe',
+                                    quality: 'HD',
+                                    source: 'script-streamtape'
+                                });
+                            });
+                        }
+
+                        // Dood patterns
+                        const doodMatches = scriptContent.match(/https?:\/\/[^\s"']*dood\.(?:watch|to|so)[^\s"']*/gi);
+                        if (doodMatches) {
+                            doodMatches.forEach(match => {
+                                players.push({
+                                    name: `DoodStream ${players.length + 1}`,
+                                    url: match,
+                                    type: 'iframe',
+                                    quality: 'HD',
+                                    source: 'script-dood'
+                                });
+                            });
+                        }
+
+                        // MP4 links
+                        const mp4Matches = scriptContent.match(/https?:\/\/[^\s"']*\.mp4[^\s"']*/gi);
+                        if (mp4Matches) {
+                            mp4Matches.forEach(match => {
+                                players.push({
+                                    name: `Direct MP4 ${players.length + 1}`,
+                                    url: match,
+                                    type: 'direct',
+                                    quality: 'HD',
+                                    source: 'script-mp4'
+                                });
+                            });
+                        }
+                    }
+                });
+
+                if (players.length > 0) {
+                    console.log(`✅ Found ${players.length} players from ${url}`);
+                    return { players, sourceUrl: url };
+                }
+            }
+        } catch (error) {
+            console.log(`❌ Failed: ${url} - ${error.message}`);
+        }
+    }
+
+    return { players: [], sourceUrl: null };
+}
+
+// Search AnimeWorld for content
+async function searchAnimeWorld(query, type = 'anime') {
+    try {
+        const searchUrl = type === 'cartoon' 
+            ? `${ANIMEWORLD_CONFIG.baseUrl}/category/cartoon/`
+            : `${ANIMEWORLD_CONFIG.baseUrl}/category/anime/`;
+
+        const response = await axios.get(searchUrl, {
+            headers: ANIMEWORLD_CONFIG.headers,
+            timeout: 10000
+        });
+
+        const $ = cheerio.load(response.data);
+        const results = [];
+
+        $('article').each((i, el) => {
+            const title = $(el).find('h2 a').text().trim();
+            const url = $(el).find('h2 a').attr('href');
+            const image = $(el).find('img').attr('src');
+            
+            if (title.toLowerCase().includes(query.toLowerCase())) {
+                const slug = url.split('/').filter(Boolean).pop();
+                results.push({
+                    title: title,
+                    slug: slug,
+                    image: image,
+                    type: type,
+                    url: url
+                });
+            }
+        });
+
+        return results;
+    } catch (error) {
+        console.error('Search error:', error);
+        return [];
+    }
+}
+
+// Get anime info from AniList
+async function getAnimeInfo(anilistId) {
+    try {
+        const response = await axios.post(ANILIST_CONFIG.baseUrl, {
+            query: ANIME_QUERY,
+            variables: { id: parseInt(anilistId) }
+        }, {
+            headers: ANILIST_CONFIG.headers
+        });
+
+        if (response.data.data.Media) {
+            return response.data.data.Media;
+        }
+        return null;
+    } catch (error) {
+        console.error('AniList error:', error);
+        return null;
+    }
+}
+
+// Search anime on AniList
+async function searchAniList(query, type = 'ANIME') {
+    try {
+        const response = await axios.post(ANILIST_CONFIG.baseUrl, {
+            query: SEARCH_QUERY,
+            variables: { search: query, type: type }
+        }, {
+            headers: ANILIST_CONFIG.headers
+        });
+
+        return response.data.data.Page.media || [];
+    } catch (error) {
+        console.error('AniList search error:', error);
+        return [];
+    }
 }
 
 // API Routes
 
-// Get all content
-app.get('/api/content', (req, res) => {
-    const content = Object.keys(ANIMEWORLD_DATABASE).map(id => ({
-        id: parseInt(id),
-        ...ANIMEWORLD_DATABASE[id],
-        image: `https://via.placeholder.com/300x400/181818/FFFFFF?text=${encodeURIComponent(ANIMEWORLD_DATABASE[id].title)}`,
-        description: `Watch ${ANIMEWORLD_DATABASE[id].title} in HD quality.`,
-        year: Math.floor(Math.random() * 25) + 2000,
-        status: 'Completed'
-    }));
-
+// Health check
+app.get('/', (req, res) => {
     res.json({
         success: true,
-        total: content.length,
-        content: content
-    });
-});
-
-// Get specific content
-app.get('/api/content/:id', (req, res) => {
-    const contentId = req.params.id;
-    const content = ANIMEWORLD_DATABASE[contentId];
-    
-    if (!content) {
-        return res.status(404).json({
-            success: false,
-            error: 'Content not found'
-        });
-    }
-
-    res.json({
-        success: true,
-        content: {
-            id: parseInt(contentId),
-            ...content,
-            image: `https://via.placeholder.com/300x400/181818/FFFFFF?text=${encodeURIComponent(content.title)}`,
-            description: `Watch ${content.title} in HD quality.`,
-            year: Math.floor(Math.random() * 25) + 2000,
-            status: 'Completed'
+        message: 'Auto-Scraping AnimeWorld API',
+        endpoints: {
+            '/api/health': 'Health check',
+            '/api/anime/:anilistId/:season/:episode': 'Get anime episode',
+            '/api/search/:query': 'Search content',
+            '/api/cartoon/:query/:episode': 'Get cartoon episode'
         }
     });
 });
 
-// Get episode players
-app.get('/api/content/:id/season/:season/episode/:episode', async (req, res) => {
-    const { id, season, episode } = req.params;
-
-    const contentInfo = ANIMEWORLD_DATABASE[id];
-    if (!contentInfo) {
-        return res.status(404).json({
-            success: false,
-            error: 'Content not found'
-        });
-    }
+// Get anime episode by AniList ID
+app.get('/api/anime/:anilistId/:season/:episode', async (req, res) => {
+    const { anilistId, season, episode } = req.params;
 
     try {
-        const animeSlug = contentInfo.slug;
-        const urlPatterns = [
-            `${ANIMEWORLD_CONFIG.baseUrl}/episode/${animeSlug}-${episode}/`,
-            `${ANIMEWORLD_CONFIG.baseUrl}/episode/${animeSlug}-episode-${episode}/`,
-            `${ANIMEWORLD_CONFIG.baseUrl}/watch/${animeSlug}-episode-${episode}/`,
-        ];
+        console.log(`🎌 Fetching AniList ID: ${anilistId}, Episode: ${episode}`);
 
-        let players = [];
-        let finalUrl = '';
-
-        for (const url of urlPatterns) {
-            try {
-                const response = await axios.get(url, {
-                    headers: ANIMEWORLD_CONFIG.headers,
-                    timeout: 10000
-                });
-
-                if (response.status === 200) {
-                    players = extractPlayersAggressive(response.data, url);
-                    finalUrl = url;
-                    if (players.length > 0) break;
-                }
-            } catch (error) {
-                continue;
-            }
+        // Get anime info from AniList
+        const animeInfo = await getAnimeInfo(anilistId);
+        if (!animeInfo) {
+            return res.status(404).json({
+                success: false,
+                error: 'Anime not found on AniList'
+            });
         }
+
+        const title = animeInfo.title.english || animeInfo.title.romaji;
+        const animeSlug = titleToSlug(title);
+
+        console.log(`🔍 Searching AnimeWorld for: ${title} (slug: ${animeSlug})`);
+
+        // Extract players from AnimeWorld
+        const { players, sourceUrl } = await extractPlayersFromAnimeWorld(animeSlug, episode);
 
         if (players.length > 0) {
             res.json({
                 success: true,
-                content_id: id,
-                content_title: contentInfo.title,
+                anilist_id: parseInt(anilistId),
+                anime_info: {
+                    title: title,
+                    description: animeInfo.description,
+                    episodes: animeInfo.episodes,
+                    genres: animeInfo.genres,
+                    coverImage: animeInfo.coverImage?.large
+                },
                 season: parseInt(season),
                 episode: parseInt(episode),
-                source_url: finalUrl,
+                source_url: sourceUrl,
                 players: players,
-                total_players: players.length
+                total_players: players.length,
+                timestamp: new Date().toISOString()
             });
         } else {
-            // Fallback players
+            // Fallback: Try searching AnimeWorld directly
+            const searchResults = await searchAnimeWorld(title);
+            if (searchResults.length > 0) {
+                const firstResult = searchResults[0];
+                const { players: fallbackPlayers } = await extractPlayersFromAnimeWorld(firstResult.slug, episode);
+                
+                if (fallbackPlayers.length > 0) {
+                    return res.json({
+                        success: true,
+                        anilist_id: parseInt(anilistId),
+                        anime_info: {
+                            title: title,
+                            episodes: animeInfo.episodes,
+                            genres: animeInfo.genres
+                        },
+                        season: parseInt(season),
+                        episode: parseInt(episode),
+                        players: fallbackPlayers,
+                        total_players: fallbackPlayers.length,
+                        note: 'Found via direct search'
+                    });
+                }
+            }
+
             res.json({
-                success: true,
-                content_id: id,
-                content_title: contentInfo.title,
-                season: parseInt(season),
-                episode: parseInt(episode),
-                players: [{
-                    name: "AnimeWorld Player",
-                    url: "https://watchanimeworld.in/embed/example",
-                    type: "iframe",
-                    quality: "HD"
-                }],
-                total_players: 1,
-                warning: "Using fallback player"
+                success: false,
+                error: 'No players found',
+                anilist_id: parseInt(anilistId),
+                anime_title: title,
+                suggestion: 'Try searching with the exact title'
             });
         }
 
     } catch (error) {
+        console.error('API error:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch episode'
+            error: 'Internal server error',
+            message: error.message
         });
     }
 });
 
-// Search content
-app.get('/api/search', (req, res) => {
-    const query = req.query.q?.toLowerCase();
-    if (!query) {
-        return res.json({
-            success: true,
-            results: []
-        });
-    }
+// Search content across AniList and AnimeWorld
+app.get('/api/search/:query', async (req, res) => {
+    const { query } = req.params;
+    const { type = 'anime' } = req.query;
 
-    const results = Object.keys(ANIMEWORLD_DATABASE)
-        .filter(id => ANIMEWORLD_DATABASE[id].title.toLowerCase().includes(query))
-        .map(id => ({
-            id: parseInt(id),
-            ...ANIMEWORLD_DATABASE[id],
-            image: `https://via.placeholder.com/300x400/181818/FFFFFF?text=${encodeURIComponent(ANIMEWORLD_DATABASE[id].title)}`
+    try {
+        console.log(`🔍 Searching for: ${query} (type: ${type})`);
+
+        let results = [];
+
+        if (type === 'anime') {
+            // Search AniList for anime
+            const anilistResults = await searchAniList(query, 'ANIME');
+            results = anilistResults.map(anime => ({
+                id: anime.id,
+                title: anime.title.english || anime.title.romaji,
+                type: 'anime',
+                episodes: anime.episodes,
+                image: anime.coverImage?.large,
+                genres: anime.genres,
+                score: anime.averageScore,
+                source: 'anilist'
+            }));
+        }
+
+        // Also search AnimeWorld
+        const animeworldResults = await searchAnimeWorld(query, type);
+        const awResults = animeworldResults.map(item => ({
+            id: titleToSlug(item.title), // Use slug as ID
+            title: item.title,
+            type: item.type,
+            image: item.image,
+            slug: item.slug,
+            source: 'animeworld'
         }));
 
-    res.json({
-        success: true,
-        query: query,
-        results: results,
-        total: results.length
-    });
+        // Merge results, removing duplicates
+        const mergedResults = [...results, ...awResults];
+        const uniqueResults = mergedResults.filter((item, index, self) =>
+            index === self.findIndex(t => t.title.toLowerCase() === item.title.toLowerCase())
+        );
+
+        res.json({
+            success: true,
+            query: query,
+            type: type,
+            results: uniqueResults,
+            total: uniqueResults.length
+        });
+
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Search failed',
+            message: error.message
+        });
+    }
+});
+
+// Get cartoon episode by title search
+app.get('/api/cartoon/:query/:episode', async (req, res) => {
+    const { query, episode } = req.params;
+
+    try {
+        console.log(`📺 Fetching cartoon: ${query}, Episode: ${episode}`);
+
+        // Search for cartoon on AnimeWorld
+        const searchResults = await searchAnimeWorld(query, 'cartoon');
+        if (searchResults.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Cartoon not found on AnimeWorld'
+            });
+        }
+
+        const cartoon = searchResults[0];
+        const { players, sourceUrl } = await extractPlayersFromAnimeWorld(cartoon.slug, episode);
+
+        if (players.length > 0) {
+            res.json({
+                success: true,
+                cartoon_info: {
+                    title: cartoon.title,
+                    slug: cartoon.slug,
+                    image: cartoon.image
+                },
+                episode: parseInt(episode),
+                source_url: sourceUrl,
+                players: players,
+                total_players: players.length,
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            res.json({
+                success: false,
+                error: 'No players found for this episode',
+                cartoon_title: cartoon.title,
+                suggestion: 'Episode might not be available yet'
+            });
+        }
+
+    } catch (error) {
+        console.error('Cartoon API error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            message: error.message
+        });
+    }
+});
+
+// Get popular anime list from AniList
+app.get('/api/popular', async (req, res) => {
+    try {
+        const popularQuery = `
+            query {
+                Page(page: 1, perPage: 50) {
+                    media(type: ANIME, sort: POPULARITY_DESC) {
+                        id
+                        title {
+                            romaji
+                            english
+                        }
+                        coverImage {
+                            large
+                        }
+                        episodes
+                        genres
+                        averageScore
+                    }
+                }
+            }
+        `;
+
+        const response = await axios.post(ANILIST_CONFIG.baseUrl, {
+            query: popularQuery
+        }, {
+            headers: ANILIST_CONFIG.headers
+        });
+
+        const popularAnime = response.data.data.Page.media.map(anime => ({
+            id: anime.id,
+            title: anime.title.english || anime.title.romaji,
+            image: anime.coverImage.large,
+            episodes: anime.episodes,
+            genres: anime.genres,
+            score: anime.averageScore
+        }));
+
+        res.json({
+            success: true,
+            popular: popularAnime,
+            total: popularAnime.length
+        });
+
+    } catch (error) {
+        console.error('Popular anime error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch popular anime'
+        });
+    }
 });
 
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({
         success: true,
-        message: 'AnimeWorld API is running',
-        total_content: Object.keys(ANIMEWORLD_DATABASE).length,
-        version: '1.0.0'
+        message: 'Auto-Scraping API is running',
+        timestamp: new Date().toISOString(),
+        features: [
+            'AniList integration',
+            'AnimeWorld scraping',
+            'Automatic slug generation',
+            'Multi-source player extraction'
+        ]
     });
 });
 
-const PORT = process.env.PORT || 3000;
+// Error handling
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({
+        success: false,
+        error: 'Internal server error'
+    });
+});
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-    console.log(`🚀 AnimeWorld API Server running on port ${PORT}`);
-    console.log(`📚 Total content: ${Object.keys(ANIMEWORLD_DATABASE).length}`);
-    console.log(`🌐 API URL: http://localhost:${PORT}/api`);
+    console.log(`🚀 Auto-Scraping AnimeWorld API running on port ${PORT}`);
+    console.log(`🌐 Local: http://localhost:${PORT}`);
+    console.log(`🔗 AniList Integration: Active`);
+    console.log(`🎌 AnimeWorld Scraping: Active`);
 });
 
 module.exports = app;
