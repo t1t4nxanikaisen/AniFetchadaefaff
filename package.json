@@ -1,18 +1,30 @@
 {
-  "name": "animeworld-api",
-  "version": "3.0.0",
-  "description": "Complete AnimeWorld API with TMDB integration and player links",
+  "name": "animeworld-auto-scraping-api",
+  "version": "1.0.0",
+  "description": "Auto-Scraping API for AnimeWorld with AniList integration",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "node index.js",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "express": "^4.18.2",
     "axios": "^1.6.0",
-    "cheerio": "^1.0.0-rc.12"
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5"
   },
   "engines": {
-    "node": ">=14.0.0"
-  }
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "anime",
+    "api",
+    "scraping",
+    "anilist",
+    "animeworld",
+    "streaming"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
 }
